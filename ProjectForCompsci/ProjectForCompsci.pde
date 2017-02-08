@@ -24,7 +24,6 @@ import shapes3d.Shape3D;
   public void setup() {
     size(1920, 1080, P3D);
     noCursor();
-
     cam = new QueasyCam(this);
     cam.speed = 5; // default is 3
     cam.sensitivity = 0.5f; // default is 2
@@ -36,11 +35,20 @@ import shapes3d.Shape3D;
       b[i].fill(assign[i][1]);
       b[i].drawMode(Shape3D.SOLID | Shape3D.WIRE);
     }
+    gameState = "GAME";
   }
 
   public void draw() {
+      playGame();
+  }
+
+  public void settings() {
+    fullScreen(P3D);
+  }
+  
+  public void playGame() {
     background(0);
-    text("Alpha v0.1", 10, 30, -150);
+    //text("Alpha v0.1", 10, 30, -150);
     pushMatrix();
     vec = cam.getForward();
     cursor(CROSS);
@@ -69,16 +77,22 @@ import shapes3d.Shape3D;
   }
 
   public void mouseClicked() {
-    if (selected[0][0] <= 0)
-      availible = 0;
-    else if (selected[1][0] <= 0)
-      availible = 1;
-    for(int i = 0; i < b.length; i++) {
-      if(picked == b[i]) {
-        if(mouseButton == LEFT) {
-          if(i >= 2) {
-            b[i].fill(colors[2]);
-          }
+    /*if(gameState.equals("STARTMENU")) {
+      gameState = "GAME";
+    }
+    */
+    if(gameState.equals("GAME")) {
+      if (selected[0][0] <= 0)
+        availible = 0;
+      else if (selected[1][0] <= 0)
+        availible = 1;
+        
+      for(int i = 0; i < b.length; i++) {
+        if(picked == b[i]) {
+          if(mouseButton == LEFT) {
+            if(i >= 2) {
+              b[i].fill(colors[2]);
+            }
           index = i;
         }
         else if(mouseButton == RIGHT) {
@@ -88,39 +102,18 @@ import shapes3d.Shape3D;
         }
       }
     }
-    /*
-    if (picked == b[0]) {
-      if (mouseButton == LEFT) {
-        // b[0].fill(color(102, 255, 102));
-        index = 0;
-      } else if (mouseButton == RIGHT) {
-        // b[0].fill(color(0, 115, 230));
-      }
-    } else if (picked == b[1]) {
-      if (mouseButton == LEFT) {
-        // b[1].fill(color(102, 255, 102));
-        index = 1;
-      } else if (mouseButton == RIGHT) {
-        b[1].fill(color(0, 115, 230));
-      }
-    } else if (picked == b[2]) {
-      if (mouseButton == LEFT) {
-        b[2].fill(color(102, 255, 102));
-        index = 2;
-      } else if (mouseButton == RIGHT) {
-        b[2].fill(color(0, 115, 230));
-      }
-    }
-    */
+    
     if (index >= 0) {
       for (int i = 0; i < pos.length; i++) {
         selected[availible][i] = pos[index][i];
       }
       indexes[availible] = index;
     }
-
+    }
   }
-
-  public void settings() {
-    fullScreen(P3D);
+  /*
+  public void startMenu() {
+    background(0);
+    text("Alpha v0.1", 10, 30, -150);
   }
+  */
