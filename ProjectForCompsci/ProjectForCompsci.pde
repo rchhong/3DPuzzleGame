@@ -8,6 +8,12 @@ import shapes3d.Shape3D;
   QueasyCam cam;
 
   Box[] b = new Box[9];
+  int startX = 100;
+  int startY = 100;
+  int startZ = -75;
+  int dX = 75;
+  int dY = 75;
+  int dZ = 75;
   int[][] pos = { { 100, 100, 0 }, { 100, 100, -75 }, { 100, 100, 75 }};
   int[][] assign = { { 0, color(255, 115, 230) }, { 1, color(0, 115, 230) }, { 2, color(102, 255, 102) } };
   int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
@@ -27,8 +33,8 @@ import shapes3d.Shape3D;
     cam = new QueasyCam(this);
     cam.speed = 5; // default is 3
     cam.sensitivity = 0.5f; // default is 2
-    // mono = createFont("vgafix", 32);
-    // textFont(mono);
+    //Make boxes
+    
     for (int i = 0; i < assign.length; i++) {
       b[i] = new Box(this, 50, 50, 50);
       b[i].moveTo(pos[i][0], pos[i][1], pos[i][2]);
@@ -81,6 +87,7 @@ import shapes3d.Shape3D;
       gameState = "GAME";
     }
     */
+    //Gamestate
     if(gameState.equals("GAME")) {
       if (selected[0][0] <= 0)
         availible = 0;
@@ -109,7 +116,31 @@ import shapes3d.Shape3D;
       }
       indexes[availible] = index;
     }
+   }
+  }
+  class myBox {
+    private Box b;
+    private int x,y,z;
+    private color c;
+    
+    public myBox(Box b, int x, int y, int z, color c) {
+      this.b = b;
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.c = c;
     }
+    public Box getBox() {return b;}
+    public int getX() {return x;}
+    public int getY() {return y;}
+    public int getZ() {return z;}
+    public color getColor() {return c;}
+    public void setCoords(int x, int y, int z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+    }
+    public void setColor(color c) {this.c = c;}
   }
   /*
   public void startMenu() {
