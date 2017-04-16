@@ -6,15 +6,16 @@ import shapes3d.Shape3D;
 
 
   QueasyCam cam;
+  //Initial Position
   int aX = 100;
   int aY = 100;
   int aZ = -75;
+  //Change in position per box
   int dX = 75;
   int dY = 75;
   int dZ = 75;
   int size = 5;
   myBox[] puzzle = new myBox[(int) Math.pow(size, 3)];
-  int[][] pos = { { 100, 100, 0 }, { 100, 100, -75 }, { 100, 100, 75 }};
   int[][] assign = { { 0, color(255, 115, 230) }, { 1, color(0, 115, 230) }, { 2, color(102, 255, 102) } };
   int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
   int[] indexes = { 0, 0 };
@@ -49,9 +50,10 @@ import shapes3d.Shape3D;
       aY = 100;
     }
     
+    //Renders boxes
     for(int i = 0; i < puzzle.length; i++) {
       puzzle[i].getBox().moveTo(puzzle[i].getX(), puzzle[i].getY(), puzzle[i].getZ());
-      puzzle[i].getBox().fill(colors[i % colors.length]);
+      puzzle[i].getBox().fill(colors[(int) (Math.random() * colors.length)]);
       puzzle[i].getBox().drawMode(Shape3D.SOLID | Shape3D.WIRE);
     }
     
@@ -74,21 +76,18 @@ import shapes3d.Shape3D;
     cursor(CROSS);
     //Picker
     picked = Shape3D.pickShape(this, width / 2, height / 2);
-    
+    //Draw boxes
     for (int i = 0; i < puzzle.length; i++) {
       puzzle[i].getBox().moveTo(puzzle[i].getX(), puzzle[i].getY(), puzzle[i].getZ());
       puzzle[i].getBox().draw();
     }
     popMatrix();
+    
     //I have no clue how this works
     if (selected[0][0] >= 0 && selected[1][0] >= 0) {
       int[] foo = { selected[0][0], selected[0][1], selected[0][2] };
-      for (int x = 0; x < pos.length; x++) {
-        pos[indexes[0]][x] = pos[indexes[1]][x];
-      }
-      for (int x = 0; x < pos.length; x++) {
-        pos[indexes[1]][x] = foo[x];
-      }
+      puzzle[indexes[0]].setCoords(puzzle[indexes[1]].getX(), puzzle[indexes[1]].getY(), puzzle[indexes[1]].getZ());
+      puzzle[indexes[1]].setCoords(foo[0],foo[1],foo[2]);
       indexes[0] = -1;
       indexes[1] = -1;
       for (int f = 0; f < selected.length; f++) {
@@ -106,7 +105,6 @@ import shapes3d.Shape3D;
     */
     //Gamestate
     if(gameState.equals("GAME")) {
-      
       if (selected[0][0] <= 0)
         availible = 0;
       else if (selected[1][0] <= 0)
@@ -115,27 +113,30 @@ import shapes3d.Shape3D;
       for(int i = 0; i < puzzle.length; i++) {
         if(picked == puzzle[i].getBox()) {
           if(mouseButton == LEFT) {
+            /*
             if(i >= 2) {
               puzzle[i].getBox().fill(colors[2]);
             }
+            */
           index = i;
         }
         else if(mouseButton == RIGHT) {
+          /*
           if(i >= 1) {
             puzzle[i].getBox().fill(colors[1]);
           }
+          */
         }
       }
     }
     
     if (index >= 0) {
-      for (int i = 0; i < pos.length; i++) {
-        selected[availible][i] = pos[index][i];
-      }
+      selected[availible] = puzzle[index].getCoords();
       indexes[availible] = index;
     }
     
    }
+   
   }
   
   class myBox {
@@ -155,6 +156,10 @@ import shapes3d.Shape3D;
     public int getY() {return y;}
     public int getZ() {return z;}
     public color getColor() {return c;}
+    public int[] getCoords() {
+      int[] coords = {x,y,z};
+      return coords;
+    }
     public void setCoords(int x, int y, int z) {
       this.x = x;
       this.y = y;
