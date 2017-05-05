@@ -1,3 +1,7 @@
+import peasy.*;
+import peasy.org.apache.commons.math.*;
+import peasy.org.apache.commons.math.geometry.*;
+
 import processing.core.PApplet;
 import processing.core.PVector;
 import queasycam.QueasyCam;
@@ -8,7 +12,9 @@ final int STARTMENU = 0;
 final int GAME = 1;
 final int PAUSE = 2;
 
-QueasyCam cam;
+PGraphics pg;
+
+PeasyCam cam;
 //Initial Position
 int aX = 100;
 int aY = 100;
@@ -17,12 +23,13 @@ int aZ = -75;
 int dX = 75;
 int dY = 75;
 int dZ = 75;
-int size = 2;
+int size = 5;
 myBox[] puzzle = new myBox[(int) Math.pow(size, 3)];
 int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
 int[] indexes = { 0, 0 };
 int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 255, 102, 255)};
-color pickedColor = color(255,0,0);
+int[] colorsTrans = {color(255, 115, 230, 122), color(0, 115, 230, 122), color(102, 255, 102, 122)};
+color pickedColor;
 int index = -1;
 int availible;
 
@@ -33,10 +40,11 @@ Shape3D picked;
 public void setup() {
   size(1920, 1080, P3D);
   noCursor();
-  cam = new QueasyCam(this);
-  cam.speed = 5; // default is 3
-  cam.sensitivity = 0.5f; // default is 2
+  cam = new PeasyCam(this, 100);
+  //cam.speed = 5; // default is 3
+  //cam.sensitivity = 0.5f; // default is 2
   //Make boxes in a cube pattern given as given size
+  pg = createGraphics(1920, 1080);
   int index = 0;
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
@@ -52,6 +60,7 @@ public void setup() {
     aX+=dX;
     aY = 100;
   }
+  
 }
 
 public void draw() {
@@ -64,8 +73,10 @@ public void settings() {
 
 public void playGame() {
   background(0);
+  cam.beginHUD();
+  cam.endHUD();
   //Camera stuff
-  vec = cam.getForward();
+  //vec = cam.getForward();
   cursor(CROSS);
   //Picker
   picked = Shape3D.pickShape(this, width / 2, height / 2);
@@ -89,6 +100,8 @@ public void playGame() {
     }
     index = -1;
   }
+  
+  
 }
 
 public void mouseClicked() {
@@ -113,7 +126,7 @@ public void mouseClicked() {
     if (index >= 0) {
       selected[availible] = puzzle[index].getCoords();
       indexes[availible] = index;
-      puzzle[index].setColor(pickedColor);
+      puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
     }
   }
 }
@@ -125,6 +138,7 @@ public void render() {
     puzzle[i].getBox().drawMode(puzzle[i].getDrawMode());
     puzzle[i].getBox().draw();
   }
+ // rect(50,50,50,50);
 }
 
 class myBox {
