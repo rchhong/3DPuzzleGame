@@ -40,7 +40,8 @@ Shape3D picked;
 public void setup() {
   size(1920, 1080, P3D);
   noCursor();
-  cam = new PeasyCam(this, 100);
+  cam = new PeasyCam(this, 250, 250, 450, 100);
+  cam.setSuppressRollRotationMode();
   //cam.speed = 5; // default is 3
   //cam.sensitivity = 0.5f; // default is 2
   //Make boxes in a cube pattern given as given size
@@ -73,8 +74,6 @@ public void settings() {
 
 public void playGame() {
   background(0);
-  cam.beginHUD();
-  cam.endHUD();
   //Camera stuff
   //vec = cam.getForward();
   cursor(CROSS);
@@ -100,8 +99,13 @@ public void playGame() {
     }
     index = -1;
   }
-  
-  
+  GUI();
+}
+
+public void GUI() {
+  cam.beginHUD();
+  rect(935,515,50,50);
+  cam.endHUD();
 }
 
 public void mouseClicked() {
@@ -114,19 +118,19 @@ public void mouseClicked() {
     if (picked == puzzle[i].getBox()) {
       if (mouseButton == LEFT) {
         index = i;
-      } else if (mouseButton == RIGHT) {
-        /*
-            if(i >= 1) {
-         puzzle[i].getBox().fill(colors[1]);
-         }
-         */
-      }
+      } 
     }
 
     if (index >= 0) {
       selected[availible] = puzzle[index].getCoords();
       indexes[availible] = index;
       puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
+    }
+    
+    if(mouseButton == RIGHT && index >= 0) {
+      selected[0] = selected[1];
+      indexes[0] = 0;
+      puzzle[index].setColor(colors[puzzle[index].getColorID()]);
     }
   }
 }
