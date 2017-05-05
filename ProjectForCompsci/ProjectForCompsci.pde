@@ -4,15 +4,12 @@ import peasy.org.apache.commons.math.geometry.*;
 
 import processing.core.PApplet;
 import processing.core.PVector;
-import queasycam.QueasyCam;
 import shapes3d.Box;
 import shapes3d.Shape3D;
 
 final int STARTMENU = 0;
 final int GAME = 1;
 final int PAUSE = 2;
-
-PGraphics pg;
 
 PeasyCam cam;
 //Initial Position
@@ -25,6 +22,7 @@ int dY = 75;
 int dZ = 75;
 int size = 5;
 myBox[] puzzle = new myBox[(int) Math.pow(size, 3)];
+
 int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
 int[] indexes = { 0, 0 };
 int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 255, 102, 255)};
@@ -33,19 +31,16 @@ color pickedColor;
 int index = -1;
 int availible;
 
-PVector vec;
 Shape3D picked;
 
 
 public void setup() {
   size(1920, 1080, P3D);
+  //Camera stuff
   noCursor();
   cam = new PeasyCam(this, 250, 250, 450, 100);
   cam.setSuppressRollRotationMode();
-  //cam.speed = 5; // default is 3
-  //cam.sensitivity = 0.5f; // default is 2
   //Make boxes in a cube pattern given as given size
-  pg = createGraphics(1920, 1080);
   int index = 0;
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
@@ -74,9 +69,6 @@ public void settings() {
 
 public void playGame() {
   background(0);
-  //Camera stuff
-  //vec = cam.getForward();
-  cursor(CROSS);
   //Picker
   picked = Shape3D.pickShape(this, width / 2, height / 2);
   //Draw boxes
@@ -104,7 +96,7 @@ public void playGame() {
 
 public void GUI() {
   cam.beginHUD();
-  rect(935,515,50,50);
+  rect(width/2,height/2,50,50);
   cam.endHUD();
 }
 
@@ -142,7 +134,6 @@ public void render() {
     puzzle[i].getBox().drawMode(puzzle[i].getDrawMode());
     puzzle[i].getBox().draw();
   }
- // rect(50,50,50,50);
 }
 
 class myBox {
