@@ -20,19 +20,16 @@ int aZ = -75;
 int dX = 75;
 int dY = 75;
 int dZ = 75;
-int size = 5;
+int size = 3;
 myBox[] puzzle = new myBox[(int) Math.pow(size, 3)];
-//Menu positions
-int bX = 100;
-int bY = 100;
-int bZ = -75;
+//Menu boxes
 myBox[] startMenu = new myBox[2];
 
 int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
 int[] indexes = { 0, 0 };
 int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 255, 102, 255)};
 int[] colorsTrans = {color(255, 115, 230, 122), color(0, 115, 230, 122), color(102, 255, 102, 122)};
-color pickedColor;
+color adjColor = color(255,0,0);
 int index = -1;
 int available;
 int appState = 0; //determines whether we are in game menu, start menu, pause
@@ -48,14 +45,14 @@ public void setup() {
   //goIntoGame = loadImage("startgame.png"); //to be implemented later
   //Camera stuff
   noCursor();
-  cam = new PeasyCam(this, 250, 250, 450, 100);
+  cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
   cam.setSuppressRollRotationMode();
   
   //initialize start menu, first object is the single box
-  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, Shape3D.SOLID | Shape3D.WIRE);
+  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, 0, Shape3D.SOLID | Shape3D.WIRE);
   //temporary, create single box in front of menu box, can be selected (very front of the menu box)
   //will eventually change to possibly add new selection menus on side of box
-  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+100, colors[0], 0, 0);
+  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+100, colors[0], 0, 1, 0);
   //startMenu[0].getBox().setTexture(goIntoGame, Box.FRONT);  //to be implemented later
 }
 
@@ -82,8 +79,9 @@ public void menuScreen() {
   picked = Shape3D.pickShape(this, width / 2, height / 2);
   //Draw boxes
   pushMatrix();
-  render2();
+  renderMenu();
   popMatrix();
+  
   GUI();
 }
 
@@ -94,7 +92,7 @@ public void gameInit() {
     for (int j = 0; j < size; j++) {
       for (int k = 0; k < size; k++) {
         int colorID = (int) (Math.random() * colors.length);
-        puzzle[index] = new myBox(new Box(this, 50, 50, 50), aX, aY, aZ, colors[colorID], colorID, Shape3D.SOLID | Shape3D.WIRE);
+        puzzle[index] = new myBox(new Box(this, 50, 50, 50), aX, aY, aZ, colors[colorID], colorID, index, Shape3D.SOLID | Shape3D.WIRE);
         index++;
         aZ+=dZ;
       }
@@ -112,23 +110,11 @@ public void playGame() {
   picked = Shape3D.pickShape(this, width / 2, height / 2);
   //Draw boxes
   pushMatrix();
-  render();
+  renderPuzzle();
   popMatrix();
   
   if (selected[0][0] >= 0 && selected[1][0] >= 0) {
-    puzzle[indexes[0]].setColor(colors[puzzle[indexes[0]].getColorID()]);
-    puzzle[indexes[1]].setColor(colors[puzzle[indexes[1]].getColorID()]);
-    int[] foo = { selected[0][0], selected[0][1], selected[0][2] };
-    puzzle[indexes[0]].setCoords(puzzle[indexes[1]].getX(), puzzle[indexes[1]].getY(), puzzle[indexes[1]].getZ());
-    puzzle[indexes[1]].setCoords(foo[0], foo[1], foo[2]);
-    indexes[0] = -1;
-    indexes[1] = -1;
-    for (int f = 0; f < selected.length; f++) {
-      for (int z = 0; z < selected[f].length; z++) {
-        selected[f][z] = -1;
-      }
-    }
-    index = -1;
+    swap();
   }
   GUI();
 }
@@ -158,11 +144,16 @@ public void mouseClicked() {
         indexes[available] = index;
         puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
       }
-      
+    
+      if (index >= 0 && indexes[1] == -1) {
+        showAdj(puzzle[index]);
+      }
+    
       if (mouseButton == RIGHT && index >= 0) {
         selected[0] = selected[1];
         indexes[0] = 0;
         puzzle[index].setColor(colors[puzzle[index].getColorID()]);
+        hideAdj();
       }
     }
   }
@@ -175,7 +166,7 @@ public void mouseClicked() {
   }
 }
 
-public void render() {
+public void renderPuzzle() {
   for (int i = 0; i < puzzle.length; i++) {
     puzzle[i].getBox().moveTo(puzzle[i].getX(), puzzle[i].getY(), puzzle[i].getZ());
     puzzle[i].getBox().fill(puzzle[i].getColor());
@@ -184,7 +175,7 @@ public void render() {
   }
 }
 
-public void render2() {
+public void renderMenu() {
   for (int i = 0; i < startMenu.length; i++) {
     startMenu[i].getBox().moveTo(startMenu[i].getX(), startMenu[i].getY(), startMenu[i].getZ());
     startMenu[i].getBox().fill(startMenu[i].getColor());
@@ -193,18 +184,78 @@ public void render2() {
   }
 }
 
+public void swap() {
+    hideAdj();
+    puzzle[indexes[0]].setColor(colors[puzzle[indexes[0]].getColorID()]);
+    puzzle[indexes[1]].setColor(colors[puzzle[indexes[1]].getColorID()]);
+    int[] foo = { selected[0][0], selected[0][1], selected[0][2] };
+    puzzle[indexes[0]].setCoords(puzzle[indexes[1]].getX(), puzzle[indexes[1]].getY(), puzzle[indexes[1]].getZ());
+    puzzle[indexes[1]].setCoords(foo[0], foo[1], foo[2]);
+    int temp = puzzle[indexes[0]].getID();
+    puzzle[indexes[0]].setID(puzzle[indexes[1]].getID());
+    puzzle[indexes[1]].setID(temp);
+    indexes[0] = -1;
+    indexes[1] = -1;
+    for (int f = 0; f < selected.length; f++) {
+      for (int z = 0; z < selected[f].length; z++) {
+        selected[f][z] = -1;
+      }
+    }
+    index = -1;
+}
+
+public boolean isAdjacent(myBox a, myBox b) {
+  int diff = Math.abs(a.getID() - b.getID());
+  if(isOnFace(a)) {
+    if(diff == 1 || diff == size || diff == size * size ||diff == -1 || diff == -size || diff == -size * size) {
+        return true;
+     }
+  } else {
+    if(diff == 1 || diff == size || diff == size * size ||diff == -1 || diff == -size || diff == -size * size) {
+        return true;
+     }
+  }
+  return false;
+}
+public boolean isOnFace(myBox a) {
+  int start = size - 1;
+  for(int i = start; i < puzzle.length; i+=size) {
+    if(i == a.getID()) {
+      return true;
+    }
+  }
+  return false;
+}
+public void showAdj(myBox pick) {
+  System.out.println("Block picked: " + pick.getID());
+  System.out.println("Blocks adj");
+  for(int i = 0; i < puzzle.length; i++) {
+    if(isAdjacent(pick, puzzle[i])) {
+      System.out.println(puzzle[i].getID());
+      puzzle[i].setColor(adjColor);
+    }
+  }
+}
+
+public void hideAdj() {
+  for(int i = 0; i < puzzle.length; i++) {
+    puzzle[i].setColor(colors[puzzle[i].getColorID()]);
+  }
+}
+
 class myBox {
   private Box b;
-  private int x, y, z, drawMode, colorID;
+  private int x, y, z, drawMode, colorID, blockID;
   private color c;
 
-  public myBox(Box b, int x, int y, int z, color c, int colorID, int drawMode) {
+  public myBox(Box b, int x, int y, int z, color c, int colorID, int blockID, int drawMode) {
     this.b = b;
     this.x = x;
     this.y = y;
     this.z = z;
     this.c = c;
     this.colorID = colorID;
+    this.blockID = blockID;
     this.drawMode = drawMode;
   }
   public Box getBox() {
@@ -225,6 +276,12 @@ class myBox {
   public int getColorID() {
     return colorID;
   }
+  public int getID() {
+    return blockID;
+  }
+  public void setID(int blockID) {
+    this.blockID = blockID;
+  }
   public int[] getCoords() {
     int[] coords = {x, y, z};
     return coords;
@@ -240,7 +297,6 @@ class myBox {
   public void setColor(color c) {
     this.c = c;
   }
-  
   public void setDrawMode(int drawMode) {
     this.drawMode = drawMode;
   }
