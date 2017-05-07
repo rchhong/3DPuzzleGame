@@ -22,6 +22,11 @@ int dY = 75;
 int dZ = 75;
 int size = 5;
 myBox[] puzzle = new myBox[(int) Math.pow(size, 3)];
+//Menu positions
+int bX = 100;
+int bY = 100;
+int bZ = -75;
+myBox[] startMenu = new myBox[2];
 
 int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
 int[] indexes = { 0, 0 };
@@ -29,17 +34,60 @@ int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 2
 int[] colorsTrans = {color(255, 115, 230, 122), color(0, 115, 230, 122), color(102, 255, 102, 122)};
 color pickedColor;
 int index = -1;
-int availible;
+int available;
+int appState = 0; //determines whether we are in game menu, start menu, pause
+boolean gameInitNotOccured = true; //returns true if game has not been initialized (game screen), set to false when game state runs
 
 Shape3D picked;
 
+//PImage goIntoGame;  //to be implemented later
 
 public void setup() {
   size(1920, 1080, P3D);
+  //initialize texture for menu box
+  //goIntoGame = loadImage("startgame.png"); //to be implemented later
   //Camera stuff
   noCursor();
   cam = new PeasyCam(this, 250, 250, 450, 100);
   cam.setSuppressRollRotationMode();
+  
+  //initialize start menu, first object is the single box
+  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, Shape3D.SOLID | Shape3D.WIRE);
+  //temporary, create single box in front of menu box, can be selected (very front of the menu box)
+  //will eventually change to possibly add new selection menus on side of box
+  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+100, colors[0], 0, 0);
+  //startMenu[0].getBox().setTexture(goIntoGame, Box.FRONT);  //to be implemented later
+}
+
+public void draw() {
+  if (appState == STARTMENU) {
+    menuScreen();
+  }
+  if (appState == GAME) {
+    if (gameInitNotOccured == true) {
+      gameInit();
+      gameInitNotOccured = false;
+    }
+    playGame();
+  }
+}
+
+public void settings() {
+  fullScreen(P3D);
+}
+
+public void menuScreen() {
+  background(0);
+  //Picker
+  picked = Shape3D.pickShape(this, width / 2, height / 2);
+  //Draw boxes
+  pushMatrix();
+  render2();
+  popMatrix();
+  GUI();
+}
+
+public void gameInit() {
   //Make boxes in a cube pattern given as given size
   int index = 0;
   for (int i = 0; i < size; i++) {
@@ -56,15 +104,6 @@ public void setup() {
     aX+=dX;
     aY = 100;
   }
-  
-}
-
-public void draw() {
-  playGame();
-}
-
-public void settings() {
-  fullScreen(P3D);
 }
 
 public void playGame() {
@@ -101,28 +140,37 @@ public void GUI() {
 }
 
 public void mouseClicked() {
-  if (selected[0][0] <= 0)
-    availible = 0;
-  else if (selected[1][0] <= 0)
-    availible = 1;
+  if (appState == GAME) {
+    if (selected[0][0] <= 0)
+      available = 0;
+    else if (selected[1][0] <= 0)
+      available = 1;
 
-  for (int i = 0; i < puzzle.length; i++) {
-    if (picked == puzzle[i].getBox()) {
+    for (int i = 0; i < puzzle.length; i++) {
+      if (picked == puzzle[i].getBox()) {
+        if (mouseButton == LEFT) {
+          index = i;
+        } 
+      }
+
+      if (index >= 0) {
+        selected[available] = puzzle[index].getCoords();
+        indexes[available] = index;
+        puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
+      }
+      
+      if (mouseButton == RIGHT && index >= 0) {
+        selected[0] = selected[1];
+        indexes[0] = 0;
+        puzzle[index].setColor(colors[puzzle[index].getColorID()]);
+      }
+    }
+  }
+  if (appState == STARTMENU) {
+    if (picked == startMenu[1].getBox()) {
       if (mouseButton == LEFT) {
-        index = i;
-      } 
-    }
-
-    if (index >= 0) {
-      selected[availible] = puzzle[index].getCoords();
-      indexes[availible] = index;
-      puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
-    }
-    
-    if(mouseButton == RIGHT && index >= 0) {
-      selected[0] = selected[1];
-      indexes[0] = 0;
-      puzzle[index].setColor(colors[puzzle[index].getColorID()]);
+        appState = 1;
+      }
     }
   }
 }
@@ -133,6 +181,15 @@ public void render() {
     puzzle[i].getBox().fill(puzzle[i].getColor());
     puzzle[i].getBox().drawMode(puzzle[i].getDrawMode());
     puzzle[i].getBox().draw();
+  }
+}
+
+public void render2() {
+  for (int i = 0; i < startMenu.length; i++) {
+    startMenu[i].getBox().moveTo(startMenu[i].getX(), startMenu[i].getY(), startMenu[i].getZ());
+    startMenu[i].getBox().fill(startMenu[i].getColor());
+    startMenu[i].getBox().drawMode(startMenu[i].getDrawMode());
+    startMenu[i].getBox().draw();
   }
 }
 
