@@ -160,7 +160,7 @@ public void mouseClicked() {
   if (appState == STARTMENU) {
     if (picked == startMenu[1].getBox()) {
       if (mouseButton == LEFT) {
-        appState = 1;
+        appState = GAME;
       }
     }
   }
