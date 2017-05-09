@@ -32,12 +32,13 @@ int index = -1;
 int availible;
 
 Shape3D picked;
+boolean adjReq = false;
 
 public void setup() {
   size(1920, 1080, P3D);
   //Camera stuff
   noCursor();
-  cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
+  cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size/1.5), 100);
   cam.setSuppressRollRotationMode();
   //Make boxes in a cube pattern given as given size
   int index = 0;
@@ -47,12 +48,12 @@ public void setup() {
         int colorID = (int) (Math.random() * colors.length);
         puzzle[index] = new myBox(new Box(this, 50, 50, 50), aX, aY, aZ, colors[colorID], colorID, index, Shape3D.SOLID | Shape3D.WIRE);
         index++;
-        aZ+=dZ;
+        aX+=dX;
       }
       aY+=dY;
-      aZ = -75;
+      aX = 100;
     }
-    aX+=dX;
+    aZ-=dZ;
     aY = 100;
   }
   
@@ -101,8 +102,16 @@ public void mouseClicked() {
         index = i;
       } 
     }
-
-    if (index >= 0) {
+  }
+    if(mouseButton == RIGHT && index >= 0) {
+      selected[0] = selected[1];
+      indexes[0] = -1;
+      puzzle[index].setColor(colors[puzzle[index].getColorID()]);
+      index = -1;
+      hideAdj();
+    }
+    
+    if (index >= 0 && indexes[0] == -1) {
       selected[availible] = puzzle[index].getCoords();
       indexes[availible] = index;
       puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
@@ -110,15 +119,9 @@ public void mouseClicked() {
     
     if(index >= 0 && indexes[1] == -1) {
       showAdj(puzzle[index]);
+      adjReq = true;
     }
     
-    if(mouseButton == RIGHT && index >= 0) {
-      selected[0] = selected[1];
-      indexes[0] = 0;
-      puzzle[index].setColor(colors[puzzle[index].getColorID()]);
-      hideAdj();
-    }
-  }
 }
 
 public void render() {
@@ -132,6 +135,7 @@ public void render() {
 
 public void swap() {
     hideAdj();
+    adjReq = false;
     puzzle[indexes[0]].setColor(colors[puzzle[indexes[0]].getColorID()]);
     puzzle[indexes[1]].setColor(colors[puzzle[indexes[1]].getColorID()]);
     int[] foo = { selected[0][0], selected[0][1], selected[0][2] };
@@ -151,33 +155,25 @@ public void swap() {
 }
 
 public boolean isAdjacent(myBox a, myBox b) {
-  int diff = Math.abs(a.getID() - b.getID());
-  if(isOnFace(a)) {
-    if(diff == 1 || diff == size || diff == size * size ||diff == -1 || diff == -size || diff == -size * size) {
-        return true;
-     }
-  } else {
-    if(diff == 1 || diff == size || diff == size * size ||diff == -1 || diff == -size || diff == -size * size) {
-        return true;
-     }
-  }
+  int diffX = a.getX() - b.getX();
+  int diffY = a.getY() - b.getY();
+  int diffZ = a.getZ() - b.getZ();
+  if(diffX == dX && diffY == 0 && diffZ == 0) {return true;}
+  if(diffX == -dX && diffY == 0 && diffZ == 0) {return true;}
+  if(diffX == 0 && diffY == dY && diffZ == 0) {return true;}
+  if(diffX == 0 && diffY == -dY && diffZ == 0) {return true;}
+  if(diffX == 0 && diffY == 0 && diffZ == dZ) {return true;}
+  if(diffX == 0 && diffY == 0 && diffZ == -dZ) {return true;}
   return false;
 }
-public boolean isOnFace(myBox a) {
-  int start = size - 1;
-  for(int i = start; i < puzzle.length; i+=size) {
-    if(i == a.getID()) {
-      return true;
-    }
-  }
-  return false;
-}
+
 public void showAdj(myBox pick) {
   System.out.println("Block picked: " + pick.getID());
-  System.out.println("Blocks adj");
+  System.out.println("X: " + pick.getX() + " Y: " + pick.getY() + " Z: " + pick.getZ());
+  //System.out.println ("Blocks adj");
   for(int i = 0; i < puzzle.length; i++) {
     if(isAdjacent(pick, puzzle[i])) {
-      System.out.println(puzzle[i].getID());
+      //System.out.println(puzzle[i].getID());
       puzzle[i].setColor(adjColor);
     }
   }
