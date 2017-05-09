@@ -23,7 +23,7 @@ int dZ = 75;
 int size = 3;
 myBox[] puzzle = new myBox[(int) Math.pow(size, 3)];
 //Menu boxes
-myBox[] startMenu = new myBox[2];
+myBox[] startMenu = new myBox[3];
 
 int[][] selected = { { -1, -1, -1 }, { -1, -1, -1 } };
 int[] indexes = { 0, 0 };
@@ -38,23 +38,19 @@ boolean gameInitNotOccured = true; //returns true if game has not been initializ
 Shape3D picked;
 boolean adjReq = false;
 
-PImage goIntoGame;  //to be implemented later
+PImage goIntoGame; //menu texture for the start game button
 
 public void setup() {
-  size(1280, 1024, P3D);
+  size(1980, 1080, P3D);
   //initialize texture for menu box
-  goIntoGame = loadImage("startgame.png"); //to be implemented later
+  goIntoGame = loadImage("startgame.jpg"); //Change start game texture soon plz
   //Camera stuff
   noCursor();
   cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
   cam.setSuppressRollRotationMode();
   
-  //initialize start menu, first object is the single box
-  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, 0, Shape3D.SOLID | Shape3D.WIRE);
-  //temporary, create single box in front of menu box, can be selected (very front of the menu box)
-  //will eventually change to possibly add new selection menus on side of box
-  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+75, colors[1], 1, 1, Shape3D.SOLID);
-  startMenu[0].getBox().setTexture(goIntoGame, Box.FRONT);  //to be implemented later
+  menuInit();
+  
 }
 
 public void draw() {
@@ -103,6 +99,16 @@ public void gameInit() {
     aZ-=dZ;
     aY = 100;
   }
+}
+
+public void menuInit() {
+  //initialize start menu, first object is the single box
+  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, 0, Shape3D.SOLID | Shape3D.WIRE);
+  //overlay boxes, actual usable menus
+  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+75, colors[1], 1, 1, Shape3D.TEXTURE); //front menu button
+  startMenu[2] = new myBox(new Box(this, 1, 150, 150), aX-75, aY, aZ, colors[1], 1, 1, Shape3D.TEXTURE);  //left side menu button
+  startMenu[1].getBox().setTexture(goIntoGame);
+  startMenu[2].getBox().setTexture(goIntoGame); //eventually change to different button
 }
 
 public void playGame() {
@@ -161,10 +167,8 @@ public void mouseClicked() {
     }
   }
   if (appState == STARTMENU) {
-    if (picked == startMenu[1].getBox()) {
-      if (mouseButton == LEFT) {
-        appState = GAME;
-      }
+    if (picked == startMenu[1].getBox() && mouseButton == LEFT) {
+      appState = GAME;
     }
   }
 }
