@@ -36,13 +36,14 @@ int appState = 0; //determines whether we are in game menu, start menu, pause
 boolean gameInitNotOccured = true; //returns true if game has not been initialized (game screen), set to false when game state runs
 
 Shape3D picked;
+boolean adjReq = false;
 
-//PImage goIntoGame;  //to be implemented later
+PImage goIntoGame;  //to be implemented later
 
 public void setup() {
-  size(1920, 1080, P3D);
+  size(1280, 1024, P3D);
   //initialize texture for menu box
-  //goIntoGame = loadImage("startgame.png"); //to be implemented later
+  goIntoGame = loadImage("startgame.png"); //to be implemented later
   //Camera stuff
   noCursor();
   cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
@@ -52,8 +53,8 @@ public void setup() {
   startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, 0, Shape3D.SOLID | Shape3D.WIRE);
   //temporary, create single box in front of menu box, can be selected (very front of the menu box)
   //will eventually change to possibly add new selection menus on side of box
-  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+100, colors[0], 0, 1, 0);
-  //startMenu[0].getBox().setTexture(goIntoGame, Box.FRONT);  //to be implemented later
+  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+75, colors[1], 1, 1, Shape3D.SOLID);
+  startMenu[0].getBox().setTexture(goIntoGame, Box.FRONT);  //to be implemented later
 }
 
 public void draw() {
@@ -94,12 +95,12 @@ public void gameInit() {
         int colorID = (int) (Math.random() * colors.length);
         puzzle[index] = new myBox(new Box(this, 50, 50, 50), aX, aY, aZ, colors[colorID], colorID, index, Shape3D.SOLID | Shape3D.WIRE);
         index++;
-        aZ+=dZ;
+        aX+=dX;
       }
       aY+=dY;
-      aZ = -75;
+      aX = 100;
     }
-    aX+=dX;
+    aZ-=dZ;
     aY = 100;
   }
 }
@@ -116,6 +117,7 @@ public void playGame() {
   if (selected[0][0] >= 0 && selected[1][0] >= 0) {
     swap();
   }
+  
   GUI();
 }
 
@@ -138,23 +140,24 @@ public void mouseClicked() {
           index = i;
         } 
       }
-
-      if (index >= 0) {
-        selected[available] = puzzle[index].getCoords();
-        indexes[available] = index;
-        puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
-      }
+    }
+    if (mouseButton == RIGHT && index >= 0) {
+      selected[0] = selected[1];
+      indexes[0] = -1;
+      puzzle[index].setColor(colors[puzzle[index].getColorID()]);
+      index = -1;
+      hideAdj();
+    }
     
-      if (index >= 0 && indexes[1] == -1) {
-        showAdj(puzzle[index]);
-      }
+    if (index >= 0) {
+      selected[available] = puzzle[index].getCoords();
+      indexes[available] = index;
+      puzzle[index].setColor(colorsTrans[puzzle[index].getColorID()]);
+    }
     
-      if (mouseButton == RIGHT && index >= 0) {
-        selected[0] = selected[1];
-        indexes[0] = 0;
-        puzzle[index].setColor(colors[puzzle[index].getColorID()]);
-        hideAdj();
-      }
+    if (index >= 0 && indexes[1] == -1) {
+      showAdj(puzzle[index]);
+      adjReq = true;
     }
   }
   if (appState == STARTMENU) {
@@ -205,33 +208,25 @@ public void swap() {
 }
 
 public boolean isAdjacent(myBox a, myBox b) {
-  int diff = Math.abs(a.getID() - b.getID());
-  if(isOnFace(a)) {
-    if(diff == 1 || diff == size || diff == size * size ||diff == -1 || diff == -size || diff == -size * size) {
-        return true;
-     }
-  } else {
-    if(diff == 1 || diff == size || diff == size * size ||diff == -1 || diff == -size || diff == -size * size) {
-        return true;
-     }
-  }
+  int diffX = a.getX() - b.getX();
+  int diffY = a.getY() - b.getY();
+  int diffZ = a.getZ() - b.getZ();
+  if(diffX == dX && diffY == 0 && diffZ == 0) {return true;}
+  if(diffX == -dX && diffY == 0 && diffZ == 0) {return true;}
+  if(diffX == 0 && diffY == dY && diffZ == 0) {return true;}
+  if(diffX == 0 && diffY == -dY && diffZ == 0) {return true;}
+  if(diffX == 0 && diffY == 0 && diffZ == dZ) {return true;}
+  if(diffX == 0 && diffY == 0 && diffZ == -dZ) {return true;}
   return false;
 }
-public boolean isOnFace(myBox a) {
-  int start = size - 1;
-  for(int i = start; i < puzzle.length; i+=size) {
-    if(i == a.getID()) {
-      return true;
-    }
-  }
-  return false;
-}
+
 public void showAdj(myBox pick) {
   System.out.println("Block picked: " + pick.getID());
-  System.out.println("Blocks adj");
+  System.out.println("X: " + pick.getX() + " Y: " + pick.getY() + " Z: " + pick.getZ());
+  //System.out.println ("Blocks adj");
   for(int i = 0; i < puzzle.length; i++) {
     if(isAdjacent(pick, puzzle[i])) {
-      System.out.println(puzzle[i].getID());
+      //System.out.println(puzzle[i].getID());
       puzzle[i].setColor(adjColor);
     }
   }
