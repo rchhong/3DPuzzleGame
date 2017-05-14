@@ -7,8 +7,6 @@ import processing.core.PVector;
 import shapes3d.Box;
 import shapes3d.Shape3D;
 
-import java.util.Arrays;
-
 final int STARTMENU = 0;
 final int GAME = 1;
 final int PAUSE = 2;
@@ -22,7 +20,7 @@ int aZ = -75;
 int dX = 75;
 int dY = 75;
 int dZ = 75;
-int size = 3;
+int size = 4;
 myBox[][][] puzzle = new myBox[size][size][size];
 
 int[][] indexes = {{ -1, -1, -1} , {-1,-1,-1}};
@@ -81,7 +79,6 @@ public void playGame() {
     checkVertical();
     checkHorizontal();
   }
-  
   GUI();
 }
 
@@ -114,7 +111,9 @@ public void mouseClicked() {
   }
   
   if(mouseButton == RIGHT && index[0] >= 0) {
-      indexes[0] = indexes[1];
+      for(int i = 0; i < indexes[0].length; i++) {
+        indexes[0][i] = indexes[1][i];
+      }
       puzzle[index[0]][index[1]][index[2]].setColor(colors[puzzle[index[0]][index[1]][index[2]].getColorID()]);
       for(int i = 0; i < index.length; i++) {
         index[i] = -1;
@@ -171,6 +170,11 @@ public void swap() {
     int temp = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].getID();
     puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].setID(puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getID());
     puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].setID(temp);
+    
+    myBox dab = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]];
+    puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]] = puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]];
+    puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]] = dab;
+    
     for (int i = 0; i < indexes.length; i++) {
       for (int j = 0; j < indexes[i].length; j++) {
         indexes[i][j] = -1;
@@ -194,12 +198,11 @@ public boolean isAdjacent(myBox a, myBox b) {
 public void showAdj(myBox pick) {
   System.out.println("Block picked: " + pick.getID());
   System.out.println("X: " + pick.getX() + " Y: " + pick.getY() + " Z: " + pick.getZ());
-  //System.out.println ("Blocks adj");
+  System.out.println("Color ID: " + pick.getColorID());
   for(int i = 0; i < puzzle.length; i++) {
     for(int j = 0; j < puzzle[i].length; j++) {
       for(int k = 0; k < puzzle[i][j].length; k++) {
         if(isAdjacent(pick, puzzle[i][j][k])) {
-        //System.out.println(puzzle[i].getID());
         puzzle[i][j][k].setColor(adjColor);
         }
       }
@@ -218,9 +221,101 @@ public void hideAdj() {
 }
 
 public void checkVertical() {
+    for(int i = 0; i < puzzle[0].length; i++) {
+      int count = 1;
+      int start = 0;
+      for(int j = 0; j < puzzle[0][j].length-1; j++) {
+        if(puzzle[0][j][i].getColorID() == puzzle[0][j+1][i].getColorID()) {
+          count++;
+        }
+        else {
+          if(count >= 3) {
+            //System.out.println(i);
+            //System.out.println(count);
+            //System.out.println("Vertical is great");
+            //shiftVertical(i, start, start+count);
+          }
+          count = 1;
+          start = j;
+        }
+      }
+      if(count >= 3) {
+         //System.out.println(i);
+         //System.out.println(count);
+         //System.out.println("Vertical is great");
+         //shiftVertical(i, start, start+count);
+       }
+    }
 }
-public void checkHorizontal() {
+
+public void checkHorizontal() {  
+    for(int i = 0; i < puzzle[0].length; i++) {
+      int count = 1;
+      int start = 0;
+      for(int j = 0; j < puzzle[0][i].length-1; j++) {
+        System.out.println("Current at " + i + " " + j);
+        if(puzzle[0][i][j].getColorID() == puzzle[0][i][j+1].getColorID()) {
+          count++;
+          System.out.println("COUNT IS: " + count);
+        }
+        else {
+          System.out.println("Boxes don't match at: " + i + " " + j);
+          System.out.println(i);
+          System.out.println(start);
+          System.out.println(count);
+          if(count >= 3) {
+            System.out.println("SUCCESS");
+            System.out.println(i);
+            System.out.println(start);
+            System.out.println(count);
+            System.out.println("Horizontal is great");
+            shiftHorizontal(i, start, start+count);
+          }
+          count = 1;
+          start = j+1;
+          System.out.println("RESET");
+          System.out.println(count);
+          System.out.println(start);
+        }
+      }
+      if(count >= 3) {
+         System.out.println("SUCCESS");
+         System.out.println(i);
+         System.out.println(start);
+         System.out.println(count);
+         System.out.println("Horizontal is great");
+         shiftHorizontal(i, start, start+count);
+       }
+    }
 }
+
+public void shiftHorizontal(int row, int start, int end) {
+  for(int i = 1; i < puzzle.length; i++) {
+    for(int j = start; j < end; j++) {
+      //push all blocks foward by dy, 1st layer sent to back, change info
+      System.out.println("Replacing puzzle at: " + i + " " + row + " " + j + " with data from: " + (i-1) + " " + row + " " + j);
+      puzzle[i][row][j].setCoords(puzzle[i-1][row][j].getX(), puzzle[i-1][row][j].getY(), puzzle[i-1][row][j].getZ());
+      puzzle[i][row][j].setColorID(puzzle[i-1][row][j].getColorID());
+      puzzle[i][row][j].setColor(colors[puzzle[i-1][row][j].getColorID()]);
+      puzzle[i][row][j].setID(puzzle[i-1][row][j].getID());
+      puzzle[i][row][j] = puzzle[i-1][row][j];
+    }
+  }
+  redraw();
+}
+
+public void shiftVertical(int col, int start, int end) {
+  for(int i = 1; i < puzzle.length; i++) {
+    for(int j = start; j < end; j++) {
+      //swap(puzzle[i-1][j][col], puzzle[i][j][col]);
+    }
+  }
+  for(int i = start; i < end; i++) {
+    puzzle[2][i][col].setColor(color(0,0,255));
+  }
+  redraw();
+}
+
 class myBox {
   private Box b;
   private int x, y, z, drawMode, colorID, blockID;
@@ -278,5 +373,8 @@ class myBox {
   
   public void setDrawMode(int drawMode) {
     this.drawMode = drawMode;
+  }
+  public void setColorID(int colorID) {
+    this.colorID = colorID;
   }
 }
