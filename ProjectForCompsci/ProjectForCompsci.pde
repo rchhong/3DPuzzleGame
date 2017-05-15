@@ -25,7 +25,7 @@ myBox[][][] puzzle = new myBox[size][size][size];
 //Menu boxes
 myBox[] startMenu = new myBox[3];
 
-int[][] indexes = {{ -1, -1, -1} , { -1, -1, -1}};
+int[][] indexes = {{ -1, -1, -1} , {-1,-1,-1}};
 int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 255, 102, 255)};
 int[] colorsTrans = {color(255, 115, 230, 122), color(0, 115, 230, 122), color(102, 255, 102, 122)};
 color adjColor = color(255,0,0);
@@ -42,7 +42,7 @@ PImage goIntoGame; //menu texture for the start game button
 public void setup() {
   size(1980, 1080, P3D);
   //initialize texture for menu box
-  goIntoGame = loadImage("startgame.jpg"); //Change start game texture soon plz
+  goIntoGame = loadImage("startgame.png"); //Change start game texture soon plz
   //Camera stuff
   noCursor();
   cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
@@ -192,6 +192,7 @@ public void mouseClicked() {
   if (appState == STARTMENU) {
     if (picked == startMenu[1].getBox() && mouseButton == LEFT) {
       appState = GAME;
+      picked = null;
     }
   }
 }
@@ -256,7 +257,7 @@ public boolean isAdjacent(myBox a, myBox b) {
 
 
 public void showAdj(myBox pick) {
- System.out.println("Block picked: " + pick.getID());
+  System.out.println("Block picked: " + pick.getID());
   System.out.println("X: " + pick.getX() + " Y: " + pick.getY() + " Z: " + pick.getZ());
   System.out.println("Color ID: " + pick.getColorID());
   for(int i = 0; i < puzzle.length; i++) {
@@ -290,20 +291,14 @@ public void checkVertical() {
         }
         else {
           if(count >= 3) {
-            //System.out.println(i);
-            //System.out.println(count);
-            //System.out.println("Vertical is great");
-            //shiftVertical(i, start, start+count);
+            shiftVertical(i, start, start+count);
           }
           count = 1;
           start = j;
         }
       }
       if(count >= 3) {
-         //System.out.println(i);
-         //System.out.println(count);
-         //System.out.println("Vertical is great");
-         //shiftVertical(i, start, start+count);
+         shiftVertical(i, start, start+count);
        }
     }
 }
@@ -313,37 +308,18 @@ public void checkHorizontal() {
       int count = 1;
       int start = 0;
       for(int j = 0; j < puzzle[0][i].length-1; j++) {
-        System.out.println("Current at " + i + " " + j);
         if(puzzle[0][i][j].getColorID() == puzzle[0][i][j+1].getColorID()) {
           count++;
-          System.out.println("COUNT IS: " + count);
         }
         else {
-          System.out.println("Boxes don't match at: " + i + " " + j);
-          System.out.println(i);
-          System.out.println(start);
-          System.out.println(count);
           if(count >= 3) {
-            System.out.println("SUCCESS");
-            System.out.println(i);
-            System.out.println(start);
-            System.out.println(count);
-            System.out.println("Horizontal is great");
             shiftHorizontal(i, start, start+count);
           }
           count = 1;
           start = j+1;
-          System.out.println("RESET");
-          System.out.println(count);
-          System.out.println(start);
         }
       }
       if(count >= 3) {
-         System.out.println("SUCCESS");
-         System.out.println(i);
-         System.out.println(start);
-         System.out.println(count);
-         System.out.println("Horizontal is great");
          shiftHorizontal(i, start, start+count);
        }
     }
@@ -353,13 +329,27 @@ public void shiftHorizontal(int row, int start, int end) {
   for(int i = 1; i < puzzle.length; i++) {
     for(int j = start; j < end; j++) {
       //push all blocks foward by dy, 1st layer sent to back, change info
-      System.out.println("Replacing puzzle at: " + i + " " + row + " " + j + " with data from: " + (i-1) + " " + row + " " + j);
-      puzzle[i][row][j].setCoords(puzzle[i-1][row][j].getX(), puzzle[i-1][row][j].getY(), puzzle[i-1][row][j].getZ());
-      puzzle[i][row][j].setColorID(puzzle[i-1][row][j].getColorID());
-      puzzle[i][row][j].setColor(colors[puzzle[i-1][row][j].getColorID()]);
-      puzzle[i][row][j].setID(puzzle[i-1][row][j].getID());
-      puzzle[i][row][j] = puzzle[i-1][row][j];
+      puzzle[i][row][j].setCoords(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ);
     }
+  }
+  for(int i = start; i < end; i++) {
+    puzzle[0][row][i].setCoords(puzzle[0][row][i].getX(),puzzle[0][row][i].getY(),puzzle[0][row][i].getZ() - dZ * (size - 1));
+  }
+  for(int i = 1; i < puzzle.length; i++) {
+    for(int j = start; j < end; j++) {
+      int foo = puzzle[i-1][row][j].getID();
+      puzzle[i-1][row][j].setID(puzzle[i][row][j].getID());
+      puzzle[i][row][j].setID(foo);
+      
+      myBox temp = puzzle[i-1][row][j];
+      puzzle[i-1][row][j] = puzzle[i][row][j];
+      puzzle[i][row][j] = temp;
+    }
+  }
+ for(int i = start; i < end; i++) {
+   int newColorID = (int) (Math.random()  * colors.length);
+    puzzle[size-1][row][i].setColorID(newColorID);
+    puzzle[size-1][row][i].setColor(colors[puzzle[size-1][row][i].getColorID()]);
   }
   redraw();
 }
@@ -367,11 +357,27 @@ public void shiftHorizontal(int row, int start, int end) {
 public void shiftVertical(int col, int start, int end) {
   for(int i = 1; i < puzzle.length; i++) {
     for(int j = start; j < end; j++) {
-      //swap(puzzle[i-1][j][col], puzzle[i][j][col]);
+       puzzle[i][j][col].setCoords(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ);
+    }
+  }
+ for(int i = start; i < end; i++) {
+    puzzle[0][i][col].setCoords(puzzle[0][i][col].getX(),puzzle[0][i][col].getY(),puzzle[0][i][col].getZ() - dZ * (size - 1));
+  }
+  for(int i = 1; i < puzzle.length; i++) {
+    for(int j = start; j < end; j++) {
+      int foo = puzzle[i-1][j][col].getID();
+      puzzle[i-1][j][col].setID(puzzle[i][j][col].getID());
+      puzzle[i][j][col].setID(foo);
+      
+      myBox temp = puzzle[i-1][j][col];
+      puzzle[i-1][j][col] = puzzle[i][j][col];
+      puzzle[i][j][col] = temp;
     }
   }
   for(int i = start; i < end; i++) {
-    puzzle[2][i][col].setColor(color(0,0,255));
+   int newColorID = (int) (Math.random()  * colors.length);
+    puzzle[size-1][i][col].setColorID(newColorID);
+    puzzle[size-1][i][col].setColor(colors[puzzle[size-1][i][col].getColorID()]);
   }
   redraw();
 }
@@ -430,6 +436,7 @@ class myBox {
   public void setColor(color c) {
     this.c = c;
   }
+  
   public void setDrawMode(int drawMode) {
     this.drawMode = drawMode;
   }
