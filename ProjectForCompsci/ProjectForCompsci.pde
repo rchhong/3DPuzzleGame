@@ -137,26 +137,26 @@ public void GUI() {
 public void mouseClicked() {
   if (appState == GAME) {
     if (indexes[0][0] == -1)
-    available = 0;
-  else if (indexes[1][0] == -1)
-    available = 1;
+      available = 0;
+    else if (indexes[1][0] == -1)
+      available = 1;
     
-  for (int i = 0; i < puzzle.length; i++) {
-    for(int j = 0; j < puzzle[i].length; j++) {
-      for(int k = 0; k < puzzle[i][j].length; k++) {
-        if (picked == puzzle[i][j][k].getBox()) {
-          if (mouseButton == LEFT) {
-            System.out.println(i + " " + j + " " + k);
-            index[0] = i;
-            index[1] = j;
-            index[2] = k;
-          } 
+    for (int i = 0; i < puzzle.length; i++) {
+      for(int j = 0; j < puzzle[i].length; j++) {
+        for(int k = 0; k < puzzle[i][j].length; k++) {
+          if (picked == puzzle[i][j][k].getBox()) {
+            if (mouseButton == LEFT) {
+              System.out.println(i + " " + j + " " + k);
+              index[0] = i;
+              index[1] = j;
+              index[2] = k;
+            } 
+          }
         }
       }
     }
-  }
   
-  if(mouseButton == RIGHT && index[0] >= 0) {
+    if(mouseButton == RIGHT && index[0] >= 0) {
       for(int i = 0; i < indexes[0].length; i++) {
         indexes[0][i] = indexes[1][i];
       }
@@ -166,23 +166,23 @@ public void mouseClicked() {
       }
       hideAdj();
       adjReq = false;
-   }
+    }
    
-   if (index[0] >= 0) {
-     if(adjReq) {
-       if(isAdjacent(puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]], puzzle[index[0]][index[1]][index[2]])) {
+    if (index[0] >= 0) {
+      if(adjReq) {
+        if(isAdjacent(puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]], puzzle[index[0]][index[1]][index[2]])) {
           for(int i = 0; i < indexes[available].length; i++) {
               indexes[available][i] = index[i];
-           }
+          }
           puzzle[index[0]][index[1]][index[2]].setColor(colorsTrans[puzzle[index[0]][index[1]][index[2]].getColorID()]);
-       }
-     } else {
-       for(int i = 0; i < indexes[available].length; i++) {
+        }
+      } else {
+        for(int i = 0; i < indexes[available].length; i++) {
            indexes[available][i] = index[i];
-       }
-       puzzle[index[0]][index[1]][index[2]].setColor(colorsTrans[puzzle[index[0]][index[1]][index[2]].getColorID()]);
-     }
-   }
+        }
+        puzzle[index[0]][index[1]][index[2]].setColor(colorsTrans[puzzle[index[0]][index[1]][index[2]].getColorID()]);
+      }
+    }
     
    if(indexes[0][0] != -1 && indexes[1][0] == -1) {
      adjReq = true;
