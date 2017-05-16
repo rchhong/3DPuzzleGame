@@ -1,3 +1,5 @@
+import ddf.minim.*;
+
 import peasy.*;
 import peasy.org.apache.commons.math.*;
 import peasy.org.apache.commons.math.geometry.*;
@@ -38,6 +40,15 @@ Shape3D picked;
 boolean adjReq = false;
 
 PImage goIntoGame; //menu texture for the start game button
+
+int score = 0;
+boolean dispMessage = false;
+String message = "";
+int startTime = millis();
+int displayDur = 3000;
+
+Minim m;
+AudioPlayer song;
 
 public void setup() {
   size(1980, 1080, P3D);
@@ -98,14 +109,17 @@ public void gameInit() {
     aZ-=dZ;
     aY = 100;
   }
+  //m = new Minim(this);
+  //song = m.loadFile("audio.mp3");
+  //song.play();
 }
 
 public void menuInit() {
   //initialize start menu, first object is the single box
-  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX, aY, aZ, colors[0], 0, 0, Shape3D.SOLID | Shape3D.WIRE);
+  startMenu[0] = new myBox(new Box(this, 150, 150, 150), aX*2, aY*2, aZ, colors[0], 0, 0, Shape3D.SOLID | Shape3D.WIRE);
   //overlay boxes, actual usable menus
-  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX, aY, aZ+75, colors[1], 1, 1, Shape3D.TEXTURE); //front menu button
-  startMenu[2] = new myBox(new Box(this, 1, 150, 150), aX-75, aY, aZ, colors[1], 1, 1, Shape3D.TEXTURE);  //left side menu button
+  startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX*2, aY*2, aZ+75, colors[1], 1, 1, Shape3D.TEXTURE); //front menu button
+  startMenu[2] = new myBox(new Box(this, 1, 150, 150), (aX*2)-75, aY*2, aZ, colors[1], 1, 1, Shape3D.TEXTURE);  //left side menu button
   startMenu[1].getBox().setTexture(goIntoGame);
   startMenu[2].getBox().setTexture(goIntoGame); //eventually change to different button
 }
@@ -131,32 +145,55 @@ public void playGame() {
 public void GUI() {
   cam.beginHUD();
   rect(width/2-10,height/2-10,20,20);
+  /**textSize(32);
+  text("" + score,10,30);
+  int timeInSec = ((song.length() - song.position()) / 1000);
+  int min = timeInSec / 60;
+  int sec = timeInSec - (min * 60);
+  text("" + min, width - 70, 30);
+  text(":", width - 50, 25);
+  if(sec > 9) 
+  text("" + sec, width - 40, 30);
+  else
+  text("0" + sec, width - 40, 30);
+  if(dispMessage) {
+    text(message, width/2 - 40, 30);
+    if(millis() - startTime > displayDur) {
+      dispMessage = false;
+      message = "";
+    }
+  }**/
   cam.endHUD();
+}
+
+public void keyPressed() {
+  if(key ==  ESC) {
+  }
 }
 
 public void mouseClicked() {
   if (appState == GAME) {
     if (indexes[0][0] == -1)
-      available = 0;
-    else if (indexes[1][0] == -1)
-      available = 1;
+    available = 0;
+  else if (indexes[1][0] == -1)
+    available = 1;
     
-    for (int i = 0; i < puzzle.length; i++) {
-      for(int j = 0; j < puzzle[i].length; j++) {
-        for(int k = 0; k < puzzle[i][j].length; k++) {
-          if (picked == puzzle[i][j][k].getBox()) {
-            if (mouseButton == LEFT) {
-              System.out.println(i + " " + j + " " + k);
-              index[0] = i;
-              index[1] = j;
-              index[2] = k;
-            } 
-          }
+  for (int i = 0; i < puzzle.length; i++) {
+    for(int j = 0; j < puzzle[i].length; j++) {
+      for(int k = 0; k < puzzle[i][j].length; k++) {
+        if (picked == puzzle[i][j][k].getBox()) {
+          if (mouseButton == LEFT) {
+            System.out.println(i + " " + j + " " + k);
+            index[0] = i;
+            index[1] = j;
+            index[2] = k;
+          } 
         }
       }
     }
+  }
   
-    if(mouseButton == RIGHT && index[0] >= 0) {
+  if(mouseButton == RIGHT && index[0] >= 0) {
       for(int i = 0; i < indexes[0].length; i++) {
         indexes[0][i] = indexes[1][i];
       }
@@ -166,23 +203,23 @@ public void mouseClicked() {
       }
       hideAdj();
       adjReq = false;
-    }
+   }
    
-    if (index[0] >= 0) {
-      if(adjReq) {
-        if(isAdjacent(puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]], puzzle[index[0]][index[1]][index[2]])) {
+   if (index[0] >= 0) {
+     if(adjReq) {
+       if(isAdjacent(puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]], puzzle[index[0]][index[1]][index[2]])) {
           for(int i = 0; i < indexes[available].length; i++) {
               indexes[available][i] = index[i];
-          }
+           }
           puzzle[index[0]][index[1]][index[2]].setColor(colorsTrans[puzzle[index[0]][index[1]][index[2]].getColorID()]);
-        }
-      } else {
-        for(int i = 0; i < indexes[available].length; i++) {
+       }
+     } else {
+       for(int i = 0; i < indexes[available].length; i++) {
            indexes[available][i] = index[i];
-        }
-        puzzle[index[0]][index[1]][index[2]].setColor(colorsTrans[puzzle[index[0]][index[1]][index[2]].getColorID()]);
-      }
-    }
+       }
+       puzzle[index[0]][index[1]][index[2]].setColor(colorsTrans[puzzle[index[0]][index[1]][index[2]].getColorID()]);
+     }
+   }
     
    if(indexes[0][0] != -1 && indexes[1][0] == -1) {
      adjReq = true;
@@ -192,6 +229,9 @@ public void mouseClicked() {
   if (appState == STARTMENU) {
     if (picked == startMenu[1].getBox() && mouseButton == LEFT) {
       appState = GAME;
+      for(int i = 0; i < startMenu.length; i++) {
+        startMenu[i].getBox().pickable(false);
+      }
       picked = null;
     }
   }
@@ -220,27 +260,35 @@ public void renderMenu() {
 }
 
 public void swap() {
-    hideAdj();
-    adjReq = false;
     puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].setColor(colors[puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].getColorID()]);
-    puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].setColor(colors[puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getColorID()]);
+   puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].setColor(colors[puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getColorID()]);
+   hideAdj();
+   adjReq = false;
+   myBox dab = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]];
+   puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]] = puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]];
+   puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]] = dab;
+  if(checkVertical() || checkHorizontal()) {
     int[] foo = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].getCoords();
     puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].setCoords(puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getX(), puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getY(), puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getZ());
     puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].setCoords(foo[0], foo[1], foo[2]);
     int temp = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].getID();
     puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].setID(puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getID());
     puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].setID(temp);
-    
-    myBox dab = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]];
+  }
+  else {
+    dab = puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]];
     puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]] = puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]];
     puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]] = dab;
-    
-    for (int i = 0; i < indexes.length; i++) {
+    dispMessage = true;
+    message = "This is an invalid placement!";
+    startTime = millis();
+  }
+  for (int i = 0; i < indexes.length; i++) {
       for (int j = 0; j < indexes[i].length; j++) {
         indexes[i][j] = -1;
       }
     }
-    for(int i = 0; i < index.length; i++) {
+  for(int i = 0; i < index.length; i++) {
         index[i] = -1;
     }
 }
@@ -281,7 +329,53 @@ public void hideAdj() {
   }
 }
 
-public void checkVertical() {
+public boolean checkVertical() {
+    for(int i = 0; i < puzzle[0].length; i++) {
+      int count = 1;
+      int start = 0;
+      for(int j = 0; j < puzzle[0][j].length-1; j++) {
+        if(puzzle[0][j][i].getColorID() == puzzle[0][j+1][i].getColorID()) {
+          count++;
+        }
+        else {
+          if(count >= 3) {
+            return true;
+          }
+          count = 1;
+          start = j;
+        }
+      }
+      if(count >= 3) {
+         return true;
+       }
+    }
+    return false;
+}
+
+public boolean checkHorizontal() {  
+    for(int i = 0; i < puzzle[0].length; i++) {
+      int count = 1;
+      int start = 0;
+      for(int j = 0; j < puzzle[0][i].length-1; j++) {
+        if(puzzle[0][i][j].getColorID() == puzzle[0][i][j+1].getColorID()) {
+          count++;
+        }
+        else {
+          if(count >= 3) {
+            return true;
+          }
+          count = 1;
+          start = j+1;
+        }
+      }
+      if(count >= 3) {
+         return true;
+       }
+    }
+    return false;
+}
+
+public void findVertical() {
     for(int i = 0; i < puzzle[0].length; i++) {
       int count = 1;
       int start = 0;
@@ -292,6 +386,7 @@ public void checkVertical() {
         else {
           if(count >= 3) {
             shiftVertical(i, start, start+count);
+            calScore(count);
           }
           count = 1;
           start = j;
@@ -299,11 +394,12 @@ public void checkVertical() {
       }
       if(count >= 3) {
          shiftVertical(i, start, start+count);
+         calScore(count);
        }
     }
 }
 
-public void checkHorizontal() {  
+public void findHorizontal() {  
     for(int i = 0; i < puzzle[0].length; i++) {
       int count = 1;
       int start = 0;
@@ -314,6 +410,7 @@ public void checkHorizontal() {
         else {
           if(count >= 3) {
             shiftHorizontal(i, start, start+count);
+            calScore(count);
           }
           count = 1;
           start = j+1;
@@ -321,6 +418,7 @@ public void checkHorizontal() {
       }
       if(count >= 3) {
          shiftHorizontal(i, start, start+count);
+         calScore(count);
        }
     }
 }
@@ -382,6 +480,10 @@ public void shiftVertical(int col, int start, int end) {
   redraw();
 }
 
+public void calScore(int count) {
+  score += (count * 100);
+}
+
 class myBox {
   private Box b;
   private int x, y, z, drawMode, colorID, blockID;
@@ -436,7 +538,6 @@ class myBox {
   public void setColor(color c) {
     this.c = c;
   }
-  
   public void setDrawMode(int drawMode) {
     this.drawMode = drawMode;
   }
