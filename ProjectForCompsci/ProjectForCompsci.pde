@@ -135,8 +135,8 @@ public void playGame() {
   
   if (indexes[0][0] >= 0 && indexes[1][0] >= 0) {
     swap();
-    checkVertical();
-    checkHorizontal();
+    findVertical();
+    findHorizontal();
   }
   
   GUI();
@@ -312,7 +312,7 @@ public void showAdj(myBox pick) {
     for(int j = 0; j < puzzle[i].length; j++) {
       for(int k = 0; k < puzzle[i][j].length; k++) {
         if(isAdjacent(pick, puzzle[i][j][k])) {
-        puzzle[i][j][k].setColor(adjColor);
+          puzzle[i][j][k].setColor(adjColor);
         }
       }
     }
@@ -332,7 +332,6 @@ public void hideAdj() {
 public boolean checkVertical() {
     for(int i = 0; i < puzzle[0].length; i++) {
       int count = 1;
-      int start = 0;
       for(int j = 0; j < puzzle[0][j].length-1; j++) {
         if(puzzle[0][j][i].getColorID() == puzzle[0][j+1][i].getColorID()) {
           count++;
@@ -342,7 +341,6 @@ public boolean checkVertical() {
             return true;
           }
           count = 1;
-          start = j;
         }
       }
       if(count >= 3) {
@@ -355,7 +353,6 @@ public boolean checkVertical() {
 public boolean checkHorizontal() {  
     for(int i = 0; i < puzzle[0].length; i++) {
       int count = 1;
-      int start = 0;
       for(int j = 0; j < puzzle[0][i].length-1; j++) {
         if(puzzle[0][i][j].getColorID() == puzzle[0][i][j+1].getColorID()) {
           count++;
@@ -365,7 +362,6 @@ public boolean checkHorizontal() {
             return true;
           }
           count = 1;
-          start = j+1;
         }
       }
       if(count >= 3) {
