@@ -1,3 +1,7 @@
+import shapes3d.*;
+import shapes3d.animation.*;
+import shapes3d.utils.*;
+
 import ddf.minim.*;
 
 import peasy.*;
@@ -38,18 +42,25 @@ boolean adjReq = false;
 int score = 0;
 boolean dispMessage = false;
 String message = "";
-int startTime = millis();
+int startTime;
 int displayDur = 3000;
 
 Minim m;
 AudioPlayer song;
 
+boolean qPressed, ePressed;
+
+boolean isMuted;
+
+
 public void setup() {
   size(1920, 1080, P3D);
   //Camera stuff
   noCursor();
-  cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size/1.5), 100);
-  cam.setSuppressRollRotationMode();
+  cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ - dZ * (size / 2),500);
+  cam.setDistance(500);
+  cam.setActive(false);
+  //cam.setSuppressRollRotationMode();
   //Make boxes in a cube pattern given as given size
   int index = 0;
   for (int i = 0; i < size; i++) {
@@ -82,7 +93,7 @@ public void settings() {
 public void playGame() {
   background(0);
   //Picker
-  picked = Shape3D.pickShape(this, width / 2, height / 2);
+  picked = Shape3D.pickShape(this, mouseX, mouseY);
   //Draw boxes
   pushMatrix();
   render();
@@ -93,22 +104,33 @@ public void playGame() {
     findHorizontal();
   }
   GUI();
+  if(qPressed) {
+    cam.rotateY(radians(-4));
+  }
+  else if(ePressed) {
+    cam.rotateY(radians(4));
+  }
 }
 
 public void GUI() {
   cam.beginHUD();
-  rect(width/2-10,height/2-10,20,20);
+  cursor();
   textSize(32);
   text("" + score,10,30);
   int timeInSec = ((song.length() - song.position()) / 1000);
   int min = timeInSec / 60;
   int sec = timeInSec - (min * 60);
+  if(song.length() < 60) {
+    //min = 0;
+    //sec = song.length() - song.position();  
+  }
   text("" + min, width - 70, 30);
   text(":", width - 50, 25);
   if(sec > 9) 
   text("" + sec, width - 40, 30);
   else
   text("0" + sec, width - 40, 30);
+  
   if(dispMessage) {
     text(message, width/2 - 40, 30);
     if(millis() - startTime > displayDur) {
@@ -120,7 +142,35 @@ public void GUI() {
 }
 
 public void keyPressed() {
-  if(key ==  ESC) {
+  switch(key) {
+    case 'q':
+      qPressed = true;
+      break;
+    case 'e':
+      ePressed = true;
+      break;
+    case 'w':
+      cam.reset();
+      break;
+    case 'm':
+      if(isMuted) {
+        song.unmute();
+        isMuted = false;
+      } else {
+        song.mute();
+        isMuted = true;
+      }
+  }
+}
+
+public void keyReleased() {
+  switch(key) {
+    case 'q':
+      qPressed = false;
+      break;
+    case 'e':
+      ePressed = false;
+      break;
   }
 }
 public void mouseClicked() {
@@ -134,7 +184,7 @@ public void mouseClicked() {
       for(int k = 0; k < puzzle[i][j].length; k++) {
         if (picked == puzzle[i][j][k].getBox()) {
           if (mouseButton == LEFT) {
-            System.out.println(i + " " + j + " " + k);
+            System.out.println("Block selected: " + i + " " + j + " " + k);
             index[0] = i;
             index[1] = j;
             index[2] = k;
@@ -143,7 +193,6 @@ public void mouseClicked() {
       }
     }
   }
-  
   if(mouseButton == RIGHT && index[0] >= 0) {
       for(int i = 0; i < indexes[0].length; i++) {
         indexes[0][i] = indexes[1][i];
@@ -155,7 +204,6 @@ public void mouseClicked() {
       hideAdj();
       adjReq = false;
    }
-   
    if (index[0] >= 0) {
      if(adjReq) {
        if(isAdjacent(puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]], puzzle[index[0]][index[1]][index[2]])) {
@@ -264,7 +312,6 @@ public void hideAdj() {
 public boolean checkVertical() {
     for(int i = 0; i < puzzle[0].length; i++) {
       int count = 1;
-      int start = 0;
       for(int j = 0; j < puzzle[0][j].length-1; j++) {
         if(puzzle[0][j][i].getColorID() == puzzle[0][j+1][i].getColorID()) {
           count++;
@@ -274,7 +321,6 @@ public boolean checkVertical() {
             return true;
           }
           count = 1;
-          start = j;
         }
       }
       if(count >= 3) {
@@ -287,7 +333,6 @@ public boolean checkVertical() {
 public boolean checkHorizontal() {  
     for(int i = 0; i < puzzle[0].length; i++) {
       int count = 1;
-      int start = 0;
       for(int j = 0; j < puzzle[0][i].length-1; j++) {
         if(puzzle[0][i][j].getColorID() == puzzle[0][i][j+1].getColorID()) {
           count++;
@@ -297,7 +342,6 @@ public boolean checkHorizontal() {
             return true;
           }
           count = 1;
-          start = j+1;
         }
       }
       if(count >= 3) {
@@ -356,38 +400,42 @@ public void findHorizontal() {
 }
 
 public void shiftHorizontal(int row, int start, int end) {
-  for(int i = 1; i < puzzle.length; i++) {
-    for(int j = start; j < end; j++) {
-      //push all blocks foward by dy, 1st layer sent to back, change info
-      puzzle[i][row][j].setCoords(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ);
+    for(int i = 1; i < puzzle.length; i++) {
+      for(int j = start; j < end; j++) {
+        //Mover m = new Mover(this, puzzle[i][row][j],new PVector(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ()), new PVector(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ), 1.0f, 0.5f);
+        //m.pre();
+        puzzle[i][row][j].setCoords(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ);
+        //puzzle[i][row][j].setColor(color(250,250,250));
+      }
     }
-  }
-  for(int i = start; i < end; i++) {
-    puzzle[0][row][i].setCoords(puzzle[0][row][i].getX(),puzzle[0][row][i].getY(),puzzle[0][row][i].getZ() - dZ * (size - 1));
-  }
-  for(int i = 1; i < puzzle.length; i++) {
-    for(int j = start; j < end; j++) {
-      int foo = puzzle[i-1][row][j].getID();
-      puzzle[i-1][row][j].setID(puzzle[i][row][j].getID());
-      puzzle[i][row][j].setID(foo);
-      
-      myBox temp = puzzle[i-1][row][j];
-      puzzle[i-1][row][j] = puzzle[i][row][j];
-      puzzle[i][row][j] = temp;
+    for(int i = start; i < end; i++) {
+      puzzle[0][row][i].setCoords(puzzle[0][row][i].getX(),puzzle[0][row][i].getY(),puzzle[0][row][i].getZ() - dZ * (size - 1));
     }
-  }
- for(int i = start; i < end; i++) {
-   int newColorID = (int) (Math.random()  * colors.length);
-    puzzle[size-1][row][i].setColorID(newColorID);
-    puzzle[size-1][row][i].setColor(colors[puzzle[size-1][row][i].getColorID()]);
-  }
-  redraw();
+    for(int i = 1; i < puzzle.length; i++) {
+      for(int j = start; j < end; j++) {
+        int foo = puzzle[i-1][row][j].getID();
+        puzzle[i-1][row][j].setID(puzzle[i][row][j].getID());
+        puzzle[i][row][j].setID(foo);
+        
+        myBox temp = puzzle[i-1][row][j];
+        puzzle[i-1][row][j] = puzzle[i][row][j];
+        puzzle[i][row][j] = temp;
+      }
+    }
+   for(int i = start; i < end; i++) {
+     int newColorID = (int) (Math.random()  * colors.length);
+      puzzle[size-1][row][i].setColorID(newColorID);
+      puzzle[size-1][row][i].setColor(colors[puzzle[size-1][row][i].getColorID()]);
+    }
+    redraw();
 }
 
 public void shiftVertical(int col, int start, int end) {
   for(int i = 1; i < puzzle.length; i++) {
     for(int j = start; j < end; j++) {
-       puzzle[i][j][col].setCoords(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ);
+        //Mover m = new Mover(this, puzzle[i][j][col],new PVector(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ()), new PVector(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ), 1.0f, 0.5f);
+        //m.pre();
+        puzzle[i][j][col].setCoords(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ);
     }
   }
  for(int i = start; i < end; i++) {
@@ -475,5 +523,71 @@ class myBox {
   }
   public void setColorID(int colorID) {
     this.colorID = colorID;
+  }
+  
+
+}
+//I want to die
+public class Mover {
+  PVector start, end, diff;
+  PApplet parent;
+  float duration, delay, runTime;
+  StopWatch timer;
+  boolean running;
+  myBox b;
+  
+  public Mover(PApplet parent, myBox b, PVector start, PVector end, float duration, float delay) {
+    this.start = start;
+    this.end = end;
+    diff = PVector.sub(end,start);
+    this.duration = duration;
+    this.delay = delay;
+    runTime = 0;
+    this.parent = parent;
+    this.b = b;
+    timer = new StopWatch();
+    parent.registerMethod("pre",this);
+  }
+  //Jesus take the wheel
+  public PVector update(){
+    PVector newValue = null;
+    timer.update();
+    float deltaTime = timer.lapTime();
+    if(delay > 0){
+      delay -= deltaTime;
+    }
+    else if(delay < 0){
+      runTime += delay;
+      delay = 0;
+      timer.reset();
+      running = true;
+    }
+    else {
+      runTime += deltaTime;
+      if(runTime < duration){
+        newValue = PVector.mult(diff, runTime / duration);
+        newValue.add(start);
+        running = false;
+      }
+      else {
+        newValue = new PVector(end.x, end.y, end.z);
+      }
+    }
+    return newValue;
+  }
+  
+  public void pre() {
+    PVector newVal = update();
+    if(newVal != null) {
+      b.setCoords((int)newVal.x,(int)newVal.y,(int)newVal.z);
+    }
+  }
+  
+  public void dispose() {
+    running = false;
+    parent.unregisterMethod("pre",this);
+  }
+  public boolean isRunning() {
+    return running;
   }
 }
