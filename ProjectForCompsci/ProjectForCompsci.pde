@@ -15,8 +15,6 @@ import processing.core.PVector;
 import shapes3d.Box;
 import shapes3d.Shape3D;
 
-import g4p_controls.*;
-
 import java.awt.Font;
 
 final int STARTMENU = 0;
@@ -34,7 +32,6 @@ int aZ = -75;
 int dX = 75;
 int dY = 75;
 int dZ = 75;
-
 int size = 4;
 myBox[][][] puzzle;
 //Menu boxes
@@ -45,7 +42,6 @@ int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 2
 int[] colorsTrans = {color(255, 115, 230, 122), color(0, 115, 230, 122), color(102, 255, 102, 122)};
 color adjColor = color(255,0,0);
 int[] index = {-1,-1,-1};
-
 int available;
 int appState = 0; //determines whether we are in game menu, start menu, pause
 boolean gameInitNotOccured = true; //returns true if game has not been initialized (game screen), set to false when game state runs
@@ -105,8 +101,9 @@ public void draw() {
   }
 }
 
-boolean isMuted;
-
+public void settings() {
+  fullScreen(P3D);
+}
 
 public void menuScreen() {
   background(0);
@@ -180,7 +177,7 @@ public void playGame() {
   pushMatrix();
   renderPuzzle();
   popMatrix();
-
+  
   if (indexes[0][0] >= 0 && indexes[1][0] >= 0) {
     swap();
     findVertical();
@@ -188,7 +185,7 @@ public void playGame() {
   }
   
   GUI();
-
+  
   if(qPressed) {
     cam.rotateY(radians(-4));
   }
@@ -333,26 +330,6 @@ public void mouseClicked() {
     }
   }
 }
-public boolean checkVertical() {
-    for(int i = 0; i < puzzle[0].length; i++) {
-      int count = 1;
-      for(int j = 0; j < puzzle[0][j].length-1; j++) {
-        if(puzzle[0][j][i].getColorID() == puzzle[0][j+1][i].getColorID()) {
-          count++;
-        }
-        else {
-          if(count >= 3) {
-            return true;
-          }
-          count = 1;
-        }
-      }
-      if(count >= 3) {
-         return true;
-       }
-    }
-    return false;
-}
 
 public void renderPuzzle() {
   for (int i = 0; i < puzzle.length; i++) {
@@ -374,15 +351,6 @@ public void renderMenu() {
     startMenu[i].getBox().drawMode(startMenu[i].getDrawMode());
     startMenu[i].getBox().draw();
   }
-  for(int i = start; i < end; i++) {
-   int newColorID = (int) (Math.random()  * colors.length);
-    puzzle[size-1][i][col].setColorID(newColorID);
-    puzzle[size-1][i][col].setColor(colors[puzzle[size-1][i][col].getColorID()]);
-  }
-  redraw();
-}
-public void calScore(int count) {
-  score += (count * 100);
 }
 
 public void swap() {
