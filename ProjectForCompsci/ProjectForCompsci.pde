@@ -1,5 +1,9 @@
 import ddf.minim.*;
 
+import shapes3d.*;
+import shapes3d.animation.*;
+import shapes3d.utils.*;
+
 import peasy.*;
 import peasy.org.apache.commons.math.*;
 import peasy.org.apache.commons.math.geometry.*;
@@ -9,9 +13,11 @@ import processing.core.PVector;
 import shapes3d.Box;
 import shapes3d.Shape3D;
 
+import g4p_controls.*;
+
 final int STARTMENU = 0;
 final int GAME = 1;
-final int PAUSE = 2;
+final int SETTINGS = 2;
 
 PeasyCam cam;
 //Initial Position
@@ -23,7 +29,7 @@ int dX = 75;
 int dY = 75;
 int dZ = 75;
 int size = 4;
-myBox[][][] puzzle = new myBox[size][size][size];
+myBox[][][] puzzle;
 //Menu boxes
 myBox[] startMenu = new myBox[3];
 
@@ -35,11 +41,13 @@ int[] index = {-1,-1,-1};
 int available;
 int appState = 0; //determines whether we are in game menu, start menu, pause
 boolean gameInitNotOccured = true; //returns true if game has not been initialized (game screen), set to false when game state runs
+//boolean settingsInitNotOccured = true; //returns true if menu is not being used, false when settings menu is running
 
 Shape3D picked;
 boolean adjReq = false;
 
-PImage goIntoGame; //menu texture for the start game button
+PImage startButton; //menu texture for the start game button
+PImage settingsButton;
 
 int score = 0;
 boolean dispMessage = false;
@@ -50,25 +58,35 @@ int displayDur = 3000;
 Minim m;
 AudioPlayer song;
 
+boolean qPressed, ePressed;
+
+boolean isMuted;
+
 public void setup() {
   size(1980, 1080, P3D);
   //initialize texture for menu box
-  goIntoGame = loadImage("startgame.png"); //Change start game texture soon plz
+  startButton = loadImage("GameAssets/startButton.png"); //Change start game texture soon plz
+  settingsButton = loadImage("GameAssets/settingsButton.png"); //settings Button
   //Camera stuff
   noCursor();
   cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
-  cam.setSuppressRollRotationMode();
+  cam.setDistance(500);
+  cam.setActive(false);
   
   menuInit();
+  settingsInit();
   
 }
 
 public void draw() {
+  if (appState == SETTINGS) {
+    settingsMenu();
+  }
   if (appState == STARTMENU) {
     menuScreen();
   }
   if (appState == GAME) {
-    if (gameInitNotOccured == true) {
+    if (gameInitNotOccured) {
       gameInit();
       gameInitNotOccured = false;
     }
@@ -83,16 +101,38 @@ public void settings() {
 public void menuScreen() {
   background(0);
   //Picker
-  picked = Shape3D.pickShape(this, width / 2, height / 2);
+  picked = Shape3D.pickShape(this, mouseX, mouseY);
   //Draw boxes
   pushMatrix();
   renderMenu();
   popMatrix();
   
   GUI();
+  
+  if(qPressed) {
+    cam.rotateY(radians(-4));
+  }
+  else if(ePressed) {
+    cam.rotateY(radians(4));
+  }
+}
+
+public void settingsMenu() {
+  background(50);
+  //System.out.println(backToMenuButton.getX() + ", " + backToMenuButton.getY());
+  //backToMenuButton.forceBufferUpdate();
+  GUI();
+  //adjust volume
+  //adjust size of cube
+  //choose song to play
+  //exit button
 }
 
 public void gameInit() {
+  //set array to set size in settings slider
+  size = setCubeSizeSlider.getValueI();
+  puzzle = new myBox[size][size][size];
+  
   //Make boxes in a cube pattern given as given size
   int index = 0;
   for (int i = 0; i < size; i++) {
@@ -109,10 +149,17 @@ public void gameInit() {
     aZ-=dZ;
     aY = 100;
   }
-  //m = new Minim(this);
-  //song = m.loadFile("audio.mp3");
-  //song.play();
+  m = new Minim(this);
+  song = m.loadFile("audio.mp3");
+  song.play();
+  song.setVolume(setVolumeSlider.getValueF()); // sets volume according to value in VolumeSlider (settingsMenu)
 }
+
+/**
+public String getSongChoice() {
+  
+}
+**/
 
 public void menuInit() {
   //initialize start menu, first object is the single box
@@ -120,14 +167,14 @@ public void menuInit() {
   //overlay boxes, actual usable menus
   startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX*2, aY*2, aZ+75, colors[1], 1, 1, Shape3D.TEXTURE); //front menu button
   startMenu[2] = new myBox(new Box(this, 1, 150, 150), (aX*2)-75, aY*2, aZ, colors[1], 1, 1, Shape3D.TEXTURE);  //left side menu button
-  startMenu[1].getBox().setTexture(goIntoGame);
-  startMenu[2].getBox().setTexture(goIntoGame); //eventually change to different button
+  startMenu[1].getBox().setTexture(startButton);
+  startMenu[2].getBox().setTexture(settingsButton); //eventually change to different button
 }
 
 public void playGame() {
   background(0);
   //Picker
-  picked = Shape3D.pickShape(this, width / 2, height / 2);
+  picked = Shape3D.pickShape(this, mouseX, mouseY);
   //Draw boxes
   pushMatrix();
   renderPuzzle();
@@ -140,34 +187,76 @@ public void playGame() {
   }
   
   GUI();
+  
+  if(qPressed) {
+    cam.rotateY(radians(-4));
+  }
+  else if(ePressed) {
+    cam.rotateY(radians(4));
+  }
 }
 
 public void GUI() {
   cam.beginHUD();
-  rect(width/2-10,height/2-10,20,20);
-  /**textSize(32);
-  text("" + score,10,30);
-  int timeInSec = ((song.length() - song.position()) / 1000);
-  int min = timeInSec / 60;
-  int sec = timeInSec - (min * 60);
-  text("" + min, width - 70, 30);
-  text(":", width - 50, 25);
-  if(sec > 9) 
-  text("" + sec, width - 40, 30);
-  else
-  text("0" + sec, width - 40, 30);
-  if(dispMessage) {
-    text(message, width/2 - 40, 30);
-    if(millis() - startTime > displayDur) {
-      dispMessage = false;
-      message = "";
+  cursor();
+  textSize(32);
+  if(appState == GAME) {
+    text("" + score,10,30);
+    int timeInSec = ((song.length() - song.position()) / 1000);
+    int min = timeInSec / 60;
+    int sec = timeInSec - (min * 60);
+    if(song.length() < 60) {
+      //min = 0;
+      //sec = song.length() - song.position();  
     }
-  }**/
+    text("" + min, width - 70, 30);
+    text(":", width - 50, 25);
+    if(sec > 9) 
+      text("" + sec, width - 40, 30);
+    else
+      text("0" + sec, width - 40, 30);
+  
+    if(dispMessage) {
+      text(message, width/2 - 40, 30);
+      if(millis() - startTime > displayDur) {
+        dispMessage = false;
+        message = "";
+      }
+    }
+  }
   cam.endHUD();
 }
 
 public void keyPressed() {
-  if(key ==  ESC) {
+  switch(key) {
+    case 'q':
+      qPressed = true;
+      break;
+    case 'e':
+      ePressed = true;
+      break;
+    case 'w':
+      cam.reset();
+      break;
+    case 'm':
+      if(isMuted) {
+        song.unmute();
+        isMuted = false;
+      } else {
+        song.mute();
+        isMuted = true;
+      }
+  }
+}
+
+public void keyReleased() {
+  switch(key) {
+    case 'q':
+      qPressed = false;
+      break;
+    case 'e':
+      ePressed = false;
+      break;
   }
 }
 
@@ -183,7 +272,7 @@ public void mouseClicked() {
       for(int k = 0; k < puzzle[i][j].length; k++) {
         if (picked == puzzle[i][j][k].getBox()) {
           if (mouseButton == LEFT) {
-            System.out.println(i + " " + j + " " + k);
+            System.out.println("Block selected: " + i + " " + j + " " + k);
             index[0] = i;
             index[1] = j;
             index[2] = k;
@@ -192,7 +281,6 @@ public void mouseClicked() {
       }
     }
   }
-  
   if(mouseButton == RIGHT && index[0] >= 0) {
       for(int i = 0; i < indexes[0].length; i++) {
         indexes[0][i] = indexes[1][i];
@@ -204,7 +292,6 @@ public void mouseClicked() {
       hideAdj();
       adjReq = false;
    }
-   
    if (index[0] >= 0) {
      if(adjReq) {
        if(isAdjacent(puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]], puzzle[index[0]][index[1]][index[2]])) {
@@ -234,6 +321,14 @@ public void mouseClicked() {
       }
       picked = null;
     }
+    if (picked == startMenu[2].getBox() && mouseButton == LEFT) {
+      for(int i = 0; i < startMenu.length; i++) {
+        startMenu[i].getBox().pickable(false);
+      }
+      picked = null;
+      appState = SETTINGS;
+      setSettingsMenuVisibility(true);
+    }
   }
 }
 
@@ -260,7 +355,7 @@ public void renderMenu() {
 }
 
 public void swap() {
-    puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].setColor(colors[puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].getColorID()]);
+   puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].setColor(colors[puzzle[indexes[0][0]][indexes[0][1]][indexes[0][2]].getColorID()]);
    puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].setColor(colors[puzzle[indexes[1][0]][indexes[1][1]][indexes[1][2]].getColorID()]);
    hideAdj();
    adjReq = false;
@@ -284,13 +379,13 @@ public void swap() {
     startTime = millis();
   }
   for (int i = 0; i < indexes.length; i++) {
-      for (int j = 0; j < indexes[i].length; j++) {
+    for (int j = 0; j < indexes[i].length; j++) {
         indexes[i][j] = -1;
-      }
     }
+  }
   for(int i = 0; i < index.length; i++) {
-        index[i] = -1;
-    }
+      index[i] = -1;
+  }
 }
 
 public boolean isAdjacent(myBox a, myBox b) {
@@ -420,38 +515,42 @@ public void findHorizontal() {
 }
 
 public void shiftHorizontal(int row, int start, int end) {
-  for(int i = 1; i < puzzle.length; i++) {
-    for(int j = start; j < end; j++) {
-      //push all blocks foward by dy, 1st layer sent to back, change info
-      puzzle[i][row][j].setCoords(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ);
+    for(int i = 1; i < puzzle.length; i++) {
+      for(int j = start; j < end; j++) {
+        //Mover m = new Mover(this, puzzle[i][row][j],new PVector(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ()), new PVector(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ), 1.0f, 0.5f);
+        //m.pre();
+        puzzle[i][row][j].setCoords(puzzle[i][row][j].getX(), puzzle[i][row][j].getY(), puzzle[i][row][j].getZ() + dZ);
+        //puzzle[i][row][j].setColor(color(250,250,250));
+      }
     }
-  }
-  for(int i = start; i < end; i++) {
-    puzzle[0][row][i].setCoords(puzzle[0][row][i].getX(),puzzle[0][row][i].getY(),puzzle[0][row][i].getZ() - dZ * (size - 1));
-  }
-  for(int i = 1; i < puzzle.length; i++) {
-    for(int j = start; j < end; j++) {
-      int foo = puzzle[i-1][row][j].getID();
-      puzzle[i-1][row][j].setID(puzzle[i][row][j].getID());
-      puzzle[i][row][j].setID(foo);
-      
-      myBox temp = puzzle[i-1][row][j];
-      puzzle[i-1][row][j] = puzzle[i][row][j];
-      puzzle[i][row][j] = temp;
+    for(int i = start; i < end; i++) {
+      puzzle[0][row][i].setCoords(puzzle[0][row][i].getX(),puzzle[0][row][i].getY(),puzzle[0][row][i].getZ() - dZ * (size - 1));
     }
-  }
- for(int i = start; i < end; i++) {
-   int newColorID = (int) (Math.random()  * colors.length);
-    puzzle[size-1][row][i].setColorID(newColorID);
-    puzzle[size-1][row][i].setColor(colors[puzzle[size-1][row][i].getColorID()]);
-  }
-  redraw();
+    for(int i = 1; i < puzzle.length; i++) {
+      for(int j = start; j < end; j++) {
+        int foo = puzzle[i-1][row][j].getID();
+        puzzle[i-1][row][j].setID(puzzle[i][row][j].getID());
+        puzzle[i][row][j].setID(foo);
+        
+        myBox temp = puzzle[i-1][row][j];
+        puzzle[i-1][row][j] = puzzle[i][row][j];
+        puzzle[i][row][j] = temp;
+      }
+    }
+   for(int i = start; i < end; i++) {
+     int newColorID = (int) (Math.random()  * colors.length);
+      puzzle[size-1][row][i].setColorID(newColorID);
+      puzzle[size-1][row][i].setColor(colors[puzzle[size-1][row][i].getColorID()]);
+    }
+    redraw();
 }
 
 public void shiftVertical(int col, int start, int end) {
   for(int i = 1; i < puzzle.length; i++) {
     for(int j = start; j < end; j++) {
-       puzzle[i][j][col].setCoords(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ);
+        //Mover m = new Mover(this, puzzle[i][j][col],new PVector(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ()), new PVector(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ), 1.0f, 0.5f);
+        //m.pre();
+        puzzle[i][j][col].setCoords(puzzle[i][j][col].getX(), puzzle[i][j][col].getY(), puzzle[i][j][col].getZ() + dZ);
     }
   }
  for(int i = start; i < end; i++) {
@@ -539,5 +638,70 @@ class myBox {
   }
   public void setColorID(int colorID) {
     this.colorID = colorID;
+  }
+}
+
+//I want to die
+public class Mover {
+  PVector start, end, diff;
+  PApplet parent;
+  float duration, delay, runTime;
+  StopWatch timer;
+  boolean running;
+  myBox b;
+  
+  public Mover(PApplet parent, myBox b, PVector start, PVector end, float duration, float delay) {
+    this.start = start;
+    this.end = end;
+    diff = PVector.sub(end,start);
+    this.duration = duration;
+    this.delay = delay;
+    runTime = 0;
+    this.parent = parent;
+    this.b = b;
+    timer = new StopWatch();
+    parent.registerMethod("pre",this);
+  }
+  //Jesus take the wheel
+  public PVector update(){
+    PVector newValue = null;
+    timer.update();
+    float deltaTime = timer.lapTime();
+    if(delay > 0){
+      delay -= deltaTime;
+    }
+    else if(delay < 0){
+      runTime += delay;
+      delay = 0;
+      timer.reset();
+      running = true;
+    }
+    else {
+      runTime += deltaTime;
+      if(runTime < duration){
+        newValue = PVector.mult(diff, runTime / duration);
+        newValue.add(start);
+        running = false;
+      }
+      else {
+        newValue = new PVector(end.x, end.y, end.z);
+      }
+    }
+    return newValue;
+  }
+  
+  public void pre() {
+    PVector newVal = update();
+    if(newVal != null) {
+      b.setCoords((int)newVal.x,(int)newVal.y,(int)newVal.z);
+    }
+  }
+  
+  public void dispose() {
+    running = false;
+    parent.unregisterMethod("pre",this);
+  }
+  public boolean isRunning() {
+    return running;
   }
 }
