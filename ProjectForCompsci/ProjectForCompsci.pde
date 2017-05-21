@@ -1,3 +1,5 @@
+import g4p_controls.*;
+
 import ddf.minim.*;
 
 import shapes3d.*;
@@ -15,11 +17,15 @@ import shapes3d.Shape3D;
 
 import g4p_controls.*;
 
+import java.awt.Font;
+
 final int STARTMENU = 0;
 final int GAME = 1;
 final int SETTINGS = 2;
+final int PAUSEMENU = 3; //TODO pause menu implementation
 
 PeasyCam cam;
+
 //Initial Position
 int aX = 100;
 int aY = 100;
@@ -62,6 +68,8 @@ boolean qPressed, ePressed;
 
 boolean isMuted;
 
+String songFileChoice = "audio.mp3";
+
 public void setup() {
   size(1980, 1080, P3D);
   //initialize texture for menu box
@@ -69,6 +77,7 @@ public void setup() {
   settingsButton = loadImage("GameAssets/settingsButton.png"); //settings Button
   //Camera stuff
   noCursor();
+  G4P.registerSketch(this);
   cam = new PeasyCam(this, aX + dX * (size/2), aY + dY * (size/2), aZ + dZ * (size + size/2), 100);
   cam.setDistance(500);
   cam.setActive(false);
@@ -118,10 +127,7 @@ public void menuScreen() {
 }
 
 public void settingsMenu() {
-  background(50);
-  //System.out.println(backToMenuButton.getX() + ", " + backToMenuButton.getY());
-  //backToMenuButton.forceBufferUpdate();
-  GUI();
+  background(40);
   //adjust volume
   //adjust size of cube
   //choose song to play
@@ -150,16 +156,10 @@ public void gameInit() {
     aY = 100;
   }
   m = new Minim(this);
-  song = m.loadFile("audio.mp3");
+  song = m.loadFile(songFileChoice);
   song.play();
   song.setVolume(setVolumeSlider.getValueF()); // sets volume according to value in VolumeSlider (settingsMenu)
 }
-
-/**
-public String getSongChoice() {
-  
-}
-**/
 
 public void menuInit() {
   //initialize start menu, first object is the single box
@@ -328,6 +328,7 @@ public void mouseClicked() {
       picked = null;
       appState = SETTINGS;
       setSettingsMenuVisibility(true);
+      redraw();
     }
   }
 }

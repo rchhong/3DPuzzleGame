@@ -1,27 +1,53 @@
-import g4p_controls.*;
-
 GButton backToMenuButton;
 GSlider setVolumeSlider;
-GDropList songChoiceList;
+GLabel setVolumeLabel;
+GButton songChoiceFromFile;
 GSlider setCubeSizeSlider;
+GLabel setCubeSizeLabel;
+GLabel settingsMenuTitle;
+GLabel currentSetSong;
 
 public void settingsInit() {
-  backToMenuButton = new GButton(this, 200, 300, 100, 50, "Go Back to Menu");
+  G4P.messagesEnabled(false);
+  G4P.setGlobalColorScheme(GCScheme.RED_SCHEME);
   
-  setVolumeSlider = new GSlider(this, 100, 400, 200, 50, 25);
-  setVolumeSlider.setLimits(25, 0, 50);
-  String[] labels = {"0", "50"};
-  setVolumeSlider.setTickLabels(labels);
+  settingsMenuTitle = new GLabel(this, 300, 20, 300, 150, "Settings");
+  settingsMenuTitle.setFont(new Font("SansSerif", Font.PLAIN, 60));
+  
+  backToMenuButton = new GButton(this, width - 150, 50, 100, 100, "Go Back to Menu");
+  backToMenuButton.setFont(new Font("SansSerif", Font.PLAIN, 20));
+  
+  setVolumeSlider = new GSlider(this, 100, 200, 500, 130, 25);
+  setVolumeSlider.setLimits(20, 0, 80);
+  setVolumeSlider.setTextOrientation(G4P.ORIENT_TRACK);
   setVolumeSlider.setShowTicks(true);
+  setVolumeSlider.setNbrTicks(9);
+  setVolumeSlider.setEasing(8);
+  setVolumeSlider.setNumberFormat(G4P.INTEGER);
   setVolumeSlider.setShowLimits(true);
   setVolumeSlider.setShowValue(true);
   
-  /**songChoiceList = new GDropList(this, 200, 700, 400, 100);
-  songChoiceList.addItem("test1");
-  songChoiceList.addItem("test2");**/
+  setVolumeLabel = new GLabel(this, 100, 160, 200, 100, "Volume of Music");
+  setVolumeLabel.setFont(new Font("SansSerif", Font.PLAIN, 20));
   
-  setCubeSizeSlider = new GSlider(this, 100, 500, 100, 50, 25);
-  setCubeSizeSlider.setLimits(3, 2, 5);
+  songChoiceFromFile = new GButton(this, 100, 520, 400, 100, "Choose Song File (opens in new window)");
+  songChoiceFromFile.setFont(new Font("SansSerif", Font.PLAIN, 20));
+  
+  setCubeSizeSlider = new GSlider(this, 100, 330, 300, 130, 25);
+  setCubeSizeSlider.setLimits(3, 2, 6);
+  setCubeSizeSlider.setTextOrientation(G4P.ORIENT_TRACK);
+  setCubeSizeSlider.setShowTicks(true);
+  setCubeSizeSlider.setNbrTicks(5);
+  setCubeSizeSlider.setEasing(4);
+  setCubeSizeSlider.setNumberFormat(G4P.INTEGER);
+  setCubeSizeSlider.setShowLimits(true);
+  setCubeSizeSlider.setShowValue(true);
+  
+  setCubeSizeLabel = new GLabel(this, 100, 290, 500, 100, "Size of Cube (select before game starts)");
+  setCubeSizeLabel.setFont(new Font("SansSerif", Font.PLAIN, 20));
+  
+  currentSetSong = new GLabel(this, 100, 680, 500, 100, "Currently selected song: " + songFileChoice);
+  currentSetSong.setFont(new Font("SansSerif", Font.PLAIN, 20));
   
   setSettingsMenuVisibility(false);
 }
@@ -35,6 +61,17 @@ public void handleButtonEvents(GButton button, GEvent event) {
     setSettingsMenuVisibility(false);
     redraw();
   }
+  
+  if(button == songChoiceFromFile && event == GEvent.CLICKED) {
+    songFileChoice = G4P.selectInput("Choose song file:", "mp3", "Music file");
+    if(songFileChoice.equals(null)) {
+      songFileChoice = "audio.mp3";
+      currentSetSong.setText("Currently selected song: Default");
+    }
+    else {
+      currentSetSong.setText("Currently selected song: " + songFileChoice);
+    }
+  }
 }
 
 public void handleSliderEvents(GValueControl slider, GEvent event) {
@@ -44,6 +81,10 @@ public void handleSliderEvents(GValueControl slider, GEvent event) {
 public void setSettingsMenuVisibility(boolean value) {
   backToMenuButton.setVisible(value);
   setVolumeSlider.setVisible(value);
-  //songChoiceList.setVisible(value);
   setCubeSizeSlider.setVisible(value);
+  setCubeSizeLabel.setVisible(value);
+  setVolumeLabel.setVisible(value);
+  songChoiceFromFile.setVisible(value);
+  settingsMenuTitle.setVisible(value);
+  currentSetSong.setVisible(value);
 }
