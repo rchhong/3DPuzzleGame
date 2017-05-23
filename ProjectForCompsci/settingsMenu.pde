@@ -54,12 +54,19 @@ public void settingsInit() {
 
 public void handleButtonEvents(GButton button, GEvent event) {
   if(button == backToMenuButton && event == GEvent.CLICKED) {
-    for(int i = 0; i < startMenu.length; i++) {
-        startMenu[i].getBox().pickable(true);
+    if(!gameInitNotOccured) {
+      appState = PAUSEMENU;
+      setPauseMenuVisibility(true);
+      setSettingsMenuVisibility(false);
     }
-    appState = STARTMENU;
-    setSettingsMenuVisibility(false);
-    redraw();
+    else {
+      for(int i = 0; i < startMenu.length; i++) {
+          startMenu[i].getBox().pickable(true);
+      }
+      appState = STARTMENU;
+      setSettingsMenuVisibility(false);
+      redraw();
+    }
   }
   
   if(button == songChoiceFromFile && event == GEvent.CLICKED) {
@@ -72,10 +79,38 @@ public void handleButtonEvents(GButton button, GEvent event) {
       currentSetSong.setText("Currently selected song: " + songFileChoice);
     }
   }
+  
+  if(button == continueGameButton && event == GEvent.CLICKED) {
+    for(int i = 0; i < puzzle.length; i++) {
+      for(int j = 0; j < puzzle.length; j++) {
+        for(int x = 0; x < puzzle.length; x++) {
+          puzzle[i][j][x].getBox().pickable(true);
+        }
+      }
+    }
+    appState = GAME;
+    song.play();
+    setPauseMenuVisibility(false);
+  }
+  
+  if(button == restartGameButton && event == GEvent.CLICKED) {
+    gameInit();
+    appState = GAME;
+    setPauseMenuVisibility(false);
+  }
+  
+  if(button == goToSettingsMenuButton && event == GEvent.CLICKED) {
+    setPauseMenuVisibility(false);
+    appState = SETTINGS;
+    setSettingsMenuVisibility(true);
+  }
+  
+  if(button == exitGameButton && event == GEvent.CLICKED) {
+    System.exit(0);
+  }
 }
 
 public void handleSliderEvents(GValueControl slider, GEvent event) {
-  
 }
 
 public void setSettingsMenuVisibility(boolean value) {

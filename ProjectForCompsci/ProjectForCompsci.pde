@@ -15,8 +15,6 @@ import processing.core.PVector;
 import shapes3d.Box;
 import shapes3d.Shape3D;
 
-import g4p_controls.*;
-
 import java.awt.Font;
 
 final int STARTMENU = 0;
@@ -34,18 +32,16 @@ int aZ = -75;
 int dX = 75;
 int dY = 75;
 int dZ = 75;
-
 int size = 4;
 myBox[][][] puzzle;
 //Menu boxes
-myBox[] startMenu = new myBox[3];
+myBox[] startMenu = new myBox[4];
 
 int[][] indexes = {{ -1, -1, -1} , {-1,-1,-1}};
 int[] colors = {color(255, 115, 230, 255), color(0, 115, 230, 255), color(102, 255, 102, 255)};
 int[] colorsTrans = {color(255, 115, 230, 122), color(0, 115, 230, 122), color(102, 255, 102, 122)};
 color adjColor = color(255,0,0);
 int[] index = {-1,-1,-1};
-
 int available;
 int appState = 0; //determines whether we are in game menu, start menu, pause
 boolean gameInitNotOccured = true; //returns true if game has not been initialized (game screen), set to false when game state runs
@@ -56,6 +52,7 @@ boolean adjReq = false;
 
 PImage startButton; //menu texture for the start game button
 PImage settingsButton;
+PImage helpButton;
 
 int score = 0;
 boolean dispMessage = false;
@@ -77,6 +74,7 @@ public void setup() {
   //initialize texture for menu box
   startButton = loadImage("GameAssets/startButton.png"); //Change start game texture soon plz
   settingsButton = loadImage("GameAssets/settingsButton.png"); //settings Button
+  helpButton = loadImage("GameAssets/helpButton.png");
   //Camera stuff
   noCursor();
   G4P.registerSketch(this);
@@ -86,7 +84,8 @@ public void setup() {
   
   menuInit();
   settingsInit();
-  
+  pauseMenuInit();
+  //helpMenuInit();
 }
 
 public void draw() {
@@ -103,10 +102,14 @@ public void draw() {
     }
     playGame();
   }
+  if (appState == PAUSEMENU) {
+    pauseMenu();
+  }
 }
 
-boolean isMuted;
-
+public void settings() {
+  fullScreen(P3D);
+}
 
 public void menuScreen() {
   background(0);
@@ -133,6 +136,13 @@ public void settingsMenu() {
   //adjust size of cube
   //choose song to play
   //exit button
+}
+
+public void pauseMenu() {
+  background(30);
+  //quit button
+  //retry button
+  //continue button
 }
 
 public void gameInit() {
@@ -168,8 +178,10 @@ public void menuInit() {
   //overlay boxes, actual usable menus
   startMenu[1] = new myBox(new Box(this, 150, 150, 1), aX*2, aY*2, aZ+75, colors[1], 1, 1, Shape3D.TEXTURE); //front menu button
   startMenu[2] = new myBox(new Box(this, 1, 150, 150), (aX*2)-75, aY*2, aZ, colors[1], 1, 1, Shape3D.TEXTURE);  //left side menu button
+  startMenu[3] = new myBox(new Box(this, 1, 150, 150), (aX*2)+75, aY*2, aZ, colors[1], 1, 1, Shape3D.TEXTURE);  //left side menu button
   startMenu[1].getBox().setTexture(startButton);
   startMenu[2].getBox().setTexture(settingsButton); //eventually change to different button
+  startMenu[3].getBox().setTexture(helpButton);
 }
 
 public void playGame() {
@@ -180,7 +192,7 @@ public void playGame() {
   pushMatrix();
   renderPuzzle();
   popMatrix();
-
+  
   if (indexes[0][0] >= 0 && indexes[1][0] >= 0) {
     swap();
     findVertical();
@@ -188,7 +200,7 @@ public void playGame() {
   }
   
   GUI();
-
+  
   if(qPressed) {
     cam.rotateY(radians(-4));
   }
@@ -246,6 +258,20 @@ public void keyPressed() {
       } else {
         song.mute();
         isMuted = true;
+      }
+    case 'p':
+      if(appState == GAME) {
+        song.pause();
+        for(int i = 0; i < puzzle.length; i++) {
+          for(int j = 0; j < puzzle.length; j++) {
+            for(int x = 0; x < puzzle.length; x++) {
+              puzzle[i][j][x].getBox().pickable(false);
+            }
+          }
+        }
+        picked = null;
+        appState = PAUSEMENU;
+        setPauseMenuVisibility(true);
       }
   }
 }
@@ -333,26 +359,6 @@ public void mouseClicked() {
     }
   }
 }
-public boolean checkVertical() {
-    for(int i = 0; i < puzzle[0].length; i++) {
-      int count = 1;
-      for(int j = 0; j < puzzle[0][j].length-1; j++) {
-        if(puzzle[0][j][i].getColorID() == puzzle[0][j+1][i].getColorID()) {
-          count++;
-        }
-        else {
-          if(count >= 3) {
-            return true;
-          }
-          count = 1;
-        }
-      }
-      if(count >= 3) {
-         return true;
-       }
-    }
-    return false;
-}
 
 public void renderPuzzle() {
   for (int i = 0; i < puzzle.length; i++) {
@@ -374,15 +380,6 @@ public void renderMenu() {
     startMenu[i].getBox().drawMode(startMenu[i].getDrawMode());
     startMenu[i].getBox().draw();
   }
-  for(int i = start; i < end; i++) {
-   int newColorID = (int) (Math.random()  * colors.length);
-    puzzle[size-1][i][col].setColorID(newColorID);
-    puzzle[size-1][i][col].setColor(colors[puzzle[size-1][i][col].getColorID()]);
-  }
-  redraw();
-}
-public void calScore(int count) {
-  score += (count * 100);
 }
 
 public void swap() {
